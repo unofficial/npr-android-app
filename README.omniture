@@ -1,0 +1,13 @@
+NPR’s proprietary release of the NPR News Android Application under this open 
+source license uses audience measurement code and services licensed from Omnitur
+e, an Adobe company.  Some of the code from this Omniture service has been inclu
+ded in this open source distribution to provide transparency around how activity
+ is being logged and measured within NPR’s proprietary release of the applicat
+ion.  However, the tracking components of this code will not function without Om
+niture’s proprietary libraries (which are excluded from the open source distri
+bution), so this code is for illustration purposes only.  ANY ASSOCIATION BETWEE
+N THE OMNITURE CODE AND ANY OTHER CODE INCLUDED IN THIS OPEN SOURCE DISTRIBUTION
+ IS HEREBY DISCLAIMED.  THIS LICENSE IS DISTRIBUTED WITHOUT REPRESENTATIONS OR W
+ARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, REGARDING THE OMNITURE CODE OR
+ ANY ACTS OR OMISSIONS RESULTING FROM USE OF THE OMNITURE CODE (INCLUDING ANY DA
+TA COLLECTION METHODOLOGIES, DATA USES, DATA TRANSFERS, ETC.). 
