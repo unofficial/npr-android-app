@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_height="fill_parent"
+  android:layout_width="fill_parent">
+  <TextView
+    android:text="@string/msg_playlist_title"
+    android:id="@+id/TextView01"
+    android:textAppearance="?android:attr/textAppearanceMedium"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dip"></TextView>
+  <RadioGroup
+    android:id="@+id/RadioGroup01"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent">
+    <RadioButton
+      android:id="@+id/RadioButton01"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/msg_playlist_unread"
+      android:layout_weight="0.5"></RadioButton>
+    <RadioButton
+      android:id="@+id/RadioButton02"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/msg_playlist_read"
+      android:layout_weight="0.5"></RadioButton>
+  </RadioGroup>
+  <ListView
+    android:id="@+id/ListView01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_weight="1.0"></ListView>
+  <LinearLayout
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:gravity="center">
+    <Button
+      android:text="@string/msg_playlist_clear"
+      android:id="@+id/PlaylistClear"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"></Button>
+  </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SlidingDrawer
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/drawer"
+  android:layout_width="fill_parent"
+  android:layout_height="wrap_content"
+  android:handle="@+id/handle"
+  android:content="@+id/content">
+  <LinearLayout
+    android:id="@+id/handle"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/popup_top_medium">
+    <ImageView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_margin="5dip"
+      android:layout_gravity="center" android:src="@drawable/arrow_up" android:id="@+id/DrawerArrowImage"/>
+    <TextView
+      android:id="@+id/StreamTextView"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/msg_listen_nothing"
+      android:textStyle="italic"
+      android:layout_gravity="left|center_vertical"
+      android:ellipsize="marquee" android:singleLine="true"/>
+  </LinearLayout>
+  <LinearLayout
+    android:id="@+id/content"
+    android:layout_width="fill_parent"
+    android:orientation="vertical"
+    android:layout_height="fill_parent"
+    android:background="@drawable/popup_bottom_medium">
+    <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal">
+      <SeekBar
+        android:id="@+id/StreamProgressBar"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:layout_gravity="center_vertical"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="5dip" android:layout_weight="1.0" android:paddingLeft="20dip"></SeekBar>
+      <TextView
+        android:text="TextView01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/StreamLengthText"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="5dip"
+        android:layout_marginRight="3dip"></TextView>
+    </LinearLayout>
+    <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:gravity="center_horizontal">
+      <ImageButton
+        android:id="@+id/StreamPlayButton"
+        android:layout_width="wrap_content"
+        android:src="@android:drawable/ic_media_play"
+        android:scaleType="centerInside"
+        android:layout_height="48dip" />
+      <Button
+        android:id="@+id/StreamPlaylistButton"
+        android:text="@string/msg_listen_playlist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"></Button>
+      <ImageButton
+        android:id="@+id/StreamShareButton"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="10dip"
+        android:src="@android:drawable/ic_menu_share"
+        android:scaleType="centerInside"
+        android:layout_height="48dip" />
+    </LinearLayout>
+  </LinearLayout>
+</SlidingDrawer>

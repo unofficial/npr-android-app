@@ -1,0 +1,54 @@
+Privacy Policy
+
+Effective Date August 20, 2007
+At NPR, we recognize the importance of privacy to users of the mobile sites of NPR and its member stations, our interactive voice response (IVR) service, or any features of the sites or the service (collectively the "Mobile Service"). This privacy policy explains what type of information is collected from you when you visit or use our Mobile Service and how that information may be used.  If you do not want us to collect and use your information, do not use the Mobile Service.
+
+Gathering of Information
+In some cases NPR records the phone number of your mobile device when you access the Mobile Service, as described below.  Otherwise, NPR collects personally-identifying information (such as your name, e-mail address, address and/or credit card information) from the Mobile Service only if you choose to provide that information to us.
+NPR asks visitors to provide certain personal information when they send content to another person via e-mail or SMS (Short Message Service, or "text messaging"), make a donation to a member station (see the "Donations" section below), submit feedback to NPR, or e-mail a page of our mobile site to another person. NPR also may ask visitors to provide personal information in other limited circumstances specified at the time the information is gathered.
+Like all other mobile servers, NPR's mobile server automatically creates log files for each visitor who accesses the Mobile Service. These "access logs" allow us to make our site more useful to our visitors. The access logs record the identifier provided for your mobile device by your wireless carrier ("carrier identifier"), which in the case of some carriers is the phone number of your mobile device.  Otherwise, they do NOT record a visitor's name, address, credit card numbers, or any other personally-identifying information. They contain some or all of the following information: 
+- The carrier identifier of the device that accessed the Mobile Service. 
+- The date of the visit. 
+- The time of the visit. 
+- The path taken through the Mobile Service. 
+- The browser being used. 
+- A list of files downloaded or viewed. 
+- The amount of time spent listening to audio files. 
+- Any errors encountered. 
+
+Tracking Your Activity Through Cookies and Carrier Identifiers
+NPR also uses 'cookies' to collect information. A cookie is a string of characters that can be written to a file on the user's mobile device when the user visits a mobile site. Only the mobile site that set the cookie can read it, and it can only be used as a record keeping device to store information that the site already has. It cannot, for example, be used to read other information from the user's mobile device.
+NPR uses cookies and carrier identifiers to track users' activity through the site in order to improve the site's architecture, to offer the user interactive features that would not be possible without them, and to recall specific information to save the user time during subsequent visits to the site, such as the identity of your local NPR member station. Other interactive features may also use cookies. If you wish to prevent certain or all cookies from being set to your mobile device, or to clear existing cookies from your device's cache, you might be able to do so by setting your browser's preferences, although your browser might then be unable to accommodate certain functionalities of the Mobile Service.
+
+Use of Information
+The use of personally-identifying information is limited to the following: responding to user e-mails; processing donations (see the "Donations" section below); sending content to another person via e-mail or SMS; evaluating user feedback; editorial purposes such as contacting users for an online survey; other internal NPR or NPR member station purposes; and other purposes specified at the time the information is gathered.
+Personally-identifying information collected through the Mobile Service is not provided to outside parties except NPR member stations, NPR service vendors (such as services for the operation and hosting of the Mobile Service and for the processing of donations), and other third parties when the user specifically consents to such distribution. In these circumstances, the information is provided for the sole purpose of -- and only to the extent necessary for -- operating the Mobile Service, processing donations, or serving other internal NPR or NPR member station purposes.
+NPR also may disclose personal information if required to do so by law or if it believes that such action is necessary to (a) comply with the law or with legal process, (b) protect against misuse or unauthorized use of the Mobile Service, or (c) protect the personal safety or property of Mobile Service users, the public or NPR and its employees.
+NPR uses non-identifying aggregate information to analyze use of and better design the Mobile Service and to share with third parties in aggregate form only as appropriate. For example, we may tell a member station or other third party that a certain number of users accessed a particular audio stream on our Mobile Service. However, we will not disclose any information that could be used to identify those users.
+
+Donations
+The features of the Mobile Service that you can use to make donations to NPR member stations are operated through technology and services provided by third parties.  These third parties will collect credit card and billing information from users, but they have no right to retain, share, store, or use this information for any purposes other than to provide to NPR the services it contracted for.  If you do not wish to provide credit card and billing information to the Mobile Service, some NPR member stations offer the option of making a donation by calling the station's pledge line. 
+
+Security
+NPR has in place what we believe to be appropriate physical, electronic, and managerial procedures to safeguard and secure the information we collect through the Mobile Service.  We require our third party service providers that have access to users' credit card information to use the highest industry standard technologies and adhere to the highest industry standard policies and procedures for data security. Although NPR exercises reasonable care in providing secure transmission of information between your mobile device and the Mobile Service, NPR cannot ensure or warrant the security of any information transmitted to us and accepts no liability for any unintentional disclosure.
+
+Children
+Under 13: If you are under 13 years of age, please do not send any information about yourself, including your name, address or e-mail address. If we discover that we have collected any personally-identifying information from a child under the age of 13, we will delete that information as soon as possible.
+13-18: Visitors between the ages of 13 and 18 must obtain permission from their parents or guardians before making a donation or otherwise sending any personally-identifying information.
+
+Corrections to Personal Data
+Please contact us on our Web site at http://www.npr.org/contact/ to a) correct or update any personal information in the Mobile Service that you state is erroneous or b) request NPR to make reasonable efforts to remove your personal information from the Mobile Service. The user understands that it may be impossible to delete personal information entirely because of backups and records of deletions.
+
+Acceptance of Privacy Policy Terms
+NPR reserves the right to change this policy. Any changes to this policy will be posted to this page as soon as reasonably possible, so please check this page periodically. Use of the Mobile Service constitutes consent to any policy then in effect. Please make sure that you read NPR's Terms of Use to understand additional terms and conditions which apply to the use of our Mobile Service.
+
+If you have any questions or comments concerning our privacy policy, please contact us on our Web site at http://www.npr.org/contact/ or send a letter to:
+National Public Radio, Inc.
+635 Massachusetts Avenue, N.W.
+Washington, DC 20001-3753
+
+Corrections to Personal Data
+Please contact us on our Web site at http://www.npr.org/contact/ to a) correct or update any personal information in the Mobile Service that you state is erroneous or b) request NPR to make reasonable efforts to remove your personal information from the Mobile Service. The user understands that it may be impossible to delete personal information entirely because of backups and records of deletions.
+
+Information Collected by Your Carrier
+Your use of the Mobile Service is through your wireless carrier's network, and your carrier may collect information concerning your use of the Mobile Service. NPR is not responsible for the privacy practices of your carrier. Please review your carrier's privacy policy for information about your carrier's collection and use of your information. 

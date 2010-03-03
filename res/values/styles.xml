@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style
+    name="MyTheme"
+    parent="android:Theme.Light.NoTitleBar">
+    <item
+      name="android:windowBackground">@color/light_grey</item>
+    <item
+      name="android:colorBackground">@color/light_grey</item>
+    <item
+      name="android:panelColorBackground">@color/light_grey</item>
+    <item
+      name="android:listViewStyle">@style/MyListView</item>
+  </style>
+  <style
+    name="MyListView"
+    parent="android:Widget.ListView.White">
+    <item
+      name="android:background">@color/light_grey</item>
+  </style>
+  <style
+    name="MyDefaultTextAppearance"
+    parent="@android:style/TextAppearance">
+    <item
+      name="android:textSize">14dip</item>
+    <item
+      name="android:textColor">#333</item>
+    <item
+      name="android:textStyle">bold</item>
+  </style>
+</resources>

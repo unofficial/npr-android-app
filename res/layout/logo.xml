@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="horizontal"
+  android:layout_height="wrap_content"
+  android:layout_width="fill_parent"
+  android:background="@drawable/header"
+  android:layout_gravity="center">
+  <LinearLayout
+    android:id="@+id/LinearLayout01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_weight="1.0"></LinearLayout>
+  <ImageView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/Logo1"
+    android:layout_gravity="center" android:src="@drawable/npr"></ImageView>
+  <ImageView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:src="@drawable/news"
+    android:id="@+id/Logo2"
+    android:layout_marginLeft="5dip"
+    android:layout_gravity="center"></ImageView>
+  <LinearLayout
+    android:id="@+id/LinearLayout02"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_weight="1.0"></LinearLayout>
+  <ProgressBar
+    android:id="@+id/ProgressBar01"
+    android:indeterminate="true"
+    android:indeterminateBehavior="cycle"
+    android:layout_height="32dip"
+    android:layout_width="32dip"
+    android:layout_margin="5dip"
+    android:visibility="invisible"
+    style="?android:attr/progressBarStyleInverse"
+    android:layout_gravity="center"></ProgressBar>
+  <ImageButton
+    android:id="@+id/RefreshButton"
+    android:layout_height="32dip"
+    android:layout_width="32dip"
+    android:layout_margin="5dip"
+    android:layout_gravity="center_vertical"
+    android:src="@drawable/reload"
+    android:background="@android:color/transparent"
+    android:visibility="gone"
+    android:scaleType="centerInside"></ImageButton>
+</LinearLayout>

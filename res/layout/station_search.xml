@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical"
+  android:layout_height="fill_parent"
+  android:layout_width="fill_parent"
+  android:padding="5dip"
+  android:layout_margin="10dip">
+  <TextView
+    android:text="@string/msg_station_list_intro"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:textAppearance="?android:attr/textAppearanceMedium" />
+  <RadioGroup
+    android:id="@+id/RadioGroup01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <RadioButton
+      android:id="@+id/RadioButton01"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/msg_station_search_by_local"></RadioButton>
+    <RadioButton
+      android:id="@+id/RadioButton02"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/msg_station_search_by_other"></RadioButton>
+  </RadioGroup>
+  <EditText
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/StationSearchParamText"
+    android:minWidth="50dip"
+    android:visibility="gone"
+    android:imeOptions="actionDone"
+    android:inputType="text"></EditText>
+  <Button
+    android:text="@string/msg_station_search_now"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/StationSearchNowButton"></Button>
+</LinearLayout>

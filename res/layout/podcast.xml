@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:orientation="vertical"
+  android:padding="10dip"
+  android:layout_height="fill_parent">
+  <LinearLayout
+    android:id="@+id/LinearLayout01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginLeft="5dip">
+    <TextView
+      android:id="@+id/PodcastTitle"
+      android:text="TextView01"
+      android:textAppearance="?android:attr/textAppearanceLarge"
+      android:layout_height="wrap_content"
+      android:layout_width="wrap_content">
+    </TextView>
+    <TextView
+      android:id="@+id/PodcastSummary"
+      android:text="TextView01"
+      android:textAppearance="?android:attr/textAppearanceSmall"
+      android:layout_height="wrap_content"
+      android:layout_width="wrap_content">
+    </TextView>
+  </LinearLayout>
+  <ProgressBar
+    android:id="@+id/ProgressBar01"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"></ProgressBar>
+  <ListView
+    android:id="@+id/ListView01"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_weight="1.0"></ListView>
+</LinearLayout>

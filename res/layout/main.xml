@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <LinearLayout
+    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:id="@+id/Logo"
+    android:orientation="vertical">
+    <include
+      layout="@layout/logo" />
+    <LinearLayout
+      android:layout_height="wrap_content"
+      android:layout_width="fill_parent"
+      android:background="@drawable/title">
+      <TextView
+        android:id="@+id/LogoNavText"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:text="Dummy Text"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:layout_marginLeft="15dip"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="#fff"
+        android:singleLine="false" android:paddingBottom="2dip">
+      </TextView>
+    </LinearLayout>
+  </LinearLayout>
+  <ViewFlipper
+    android:id="@+id/MainFlipper"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_below="@+id/Logo"
+    android:layout_marginBottom="37dip">
+  </ViewFlipper>
+  <FrameLayout
+    android:id="@+id/MediaPlayer"
+    android:layout_width="fill_parent"
+    android:layout_height="130dip"
+    android:layout_alignParentBottom="true"
+    android:layout_centerHorizontal="true">
+  </FrameLayout>
+</RelativeLayout>

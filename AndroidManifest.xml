@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:versionCode="2"
+  android:versionName="1.2"
+  package="org.npr.android.news">
+  <application
+    android:theme="@style/MyTheme"
+    android:icon="@drawable/icon">
+    <activity
+      android:label="@string/app_name"
+      android:launchMode="singleTask"
+      android:configChanges="keyboardHidden|orientation"
+      android:name="Main">
+      <intent-filter>
+        <action
+          android:name="android.intent.action.MAIN" />
+        <category
+          android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <activity
+      android:name="EditPreferences"
+      android:label="@string/app_name"></activity>
+    <activity
+      android:name="StationListActivity"></activity>
+    <activity
+      android:name="StationDetailsActivity"></activity>
+    <activity
+      android:name="ListenActivity"></activity>
+    <activity
+      android:name="NewsStoryActivity"></activity>
+    <activity
+      android:name="NewsListActivity"></activity>
+    <activity
+      android:name="StationSearchActivity"
+      android:theme="@android:style/Theme.Dialog"></activity>
+    <activity
+      android:name="NewsTopicActivity"></activity>
+    <activity
+      android:name="AboutActivity"></activity>
+    <provider
+      android:name="org.npr.android.util.PlaylistProvider"
+      android:authorities="org.npr.android.util.Playlist"></provider>
+    <uses-library
+      android:name="android.test.runner"></uses-library>
+    <activity
+      android:name="SearchActivity"></activity>
+    <activity
+      android:name="MainInnerActivity"></activity>
+    <activity
+      android:name="PlaylistActivity"></activity>
+    <activity
+      android:name="PodcastActivity"></activity>
+    <activity
+      android:name="SearchResultsActivity"></activity>
+  </application>
+  <uses-permission
+    android:name="android.permission.INTERNET"></uses-permission>
+  <uses-permission
+    android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+  <uses-permission
+    android:name="android.permission.ACCESS_MOCK_LOCATION"></uses-permission>
+  <uses-permission
+    android:name="android.permission.READ_PHONE_STATE" />
+  <instrumentation
+    android:targetPackage="org.npr.android.news"
+    android:name="android.test.InstrumentationTestRunner"></instrumentation>
+  <uses-sdk
+    android:targetSdkVersion="3"
+    android:minSdkVersion="3"></uses-sdk>
+  <supports-screens
+    android:normalScreens="true"
+    android:anyDensity="true"
+    android:largeScreens="true"></supports-screens>
+</manifest>
