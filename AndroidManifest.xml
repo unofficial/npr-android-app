@@ -54,7 +54,8 @@
       android:name="PodcastActivity"></activity>
     <activity
       android:name="SearchResultsActivity"></activity>
-  </application>
+  <service android:name="PlaybackService"></service>
+</application>
   <uses-permission
     android:name="android.permission.INTERNET"></uses-permission>
   <uses-permission

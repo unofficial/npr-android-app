@@ -55,7 +55,10 @@
     <string name="msg_eula_title">End User License Agreement</string>
     
     <string name="msg_about_developer">Developed by</string>
-    <string name="msg_about_developer_value">Michael Frederick</string>
+    <string name="msg_about_developer_value">
+        &lt;br>Michael Frederick
+        &lt;br>Thomas Wilburn</string>
+    
     <string name="msg_about_contact">Contact</string>
     <string name="msg_about_contact_value">npr-android@googlegroups.com</string>
     <string name="msg_about_version_name">Version name</string>

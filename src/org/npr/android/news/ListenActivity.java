@@ -17,14 +17,15 @@ package org.npr.android.news;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Typeface;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -34,6 +35,7 @@ import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -79,35 +81,35 @@ public class ListenActivity extends Activity implements OnClickListener,
   private ImageButton streamButton;
   private ImageButton playButton;
   private SeekBar progressBar;
-  private MediaPlayer mediaPlayer;
   private TextView infoText;
   private TextView lengthText;
   private SlidingDrawer drawer;
-  private StreamProxy proxy;
-  
-  private boolean isPlaying = false;
   private Handler handler = new Handler() {
     @Override
     public void handleMessage(Message msg) {
-      switch(msg.what) {
-        case 0:
-          setPlayButton();
-          break;
-        case 1:
-          updateProgress();
-          break;
-        case 2:
-          enableProgress(true);
-          break;
-        case 3:
-          enableProgress(false);
-          break;
+      switch (msg.what) {
+      case 0:
+        setPlayButton();
+        break;
+      case 1:
+        updateProgress();
+        break;
+      case 2:
+        enableProgress(true);
+        break;
+      case 3:
+        enableProgress(false);
+        break;
       }
     }
   };
 
   private Thread updateProgressThread;
   private BroadcastReceiver receiver = new ListenBroadcastReceiver();
+
+  private ServiceConnection conn;
+  private PlaybackService player;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -122,7 +124,7 @@ public class ListenActivity extends Activity implements OnClickListener,
     streamButton = (ImageButton) findViewById(R.id.StreamShareButton);
     streamButton.setOnClickListener(this);
     streamButton.setEnabled(false);
-    
+
     Button playlistButton = (Button) findViewById(R.id.StreamPlaylistButton);
     playlistButton.setOnClickListener(this);
 
@@ -137,33 +139,41 @@ public class ListenActivity extends Activity implements OnClickListener,
     lengthText.setText("");
 
     registerReceiver(receiver, new IntentFilter(this.getClass().getName()));
-    mediaPlayer = new MediaPlayer();
-    mediaPlayer.setOnBufferingUpdateListener(this);
-    mediaPlayer.setOnCompletionListener(this);
-    mediaPlayer.setOnErrorListener(this);
-    mediaPlayer.setOnInfoListener(this);
-    mediaPlayer.setOnPreparedListener(this);
+
+    Intent serviceIntent = new Intent(this, PlaybackService.class);
+    conn = new ServiceConnection() {
+
+      @Override
+      public void onServiceConnected(ComponentName name, IBinder service) {
+        player = ((PlaybackService.ListenBinder) service).getService();
+        onBindComplete((PlaybackService.ListenBinder) service);
+      }
+
+      @Override
+      public void onServiceDisconnected(ComponentName name) {
+        Log.w(LOG_TAG, "DISCONNECT");
+        player = null;
+      }
+
+    };
+    if (!PlaybackService.isRunning) {
+      getApplicationContext().startService(serviceIntent);
+    }
+    getApplicationContext().bindService(serviceIntent, conn, 1);
   }
 
-  private void playNext() {
-    if (current != null) {
-      PlaylistEntry entry = getNextPlaylistItem(current.order);
-      if (entry != null) {
-        current = entry;
-        play();
-      }
+  private void onBindComplete(PlaybackService.ListenBinder binder) {
+    binder.setListener(this);
+    if (player.isPlaying()) {
+      current = player.getCurrentEntry();
+      setPlayButton();
+      play();
+      startUpdateThread();
     }
   }
-  
+
   private void play() {
-    infoText.setText(current.title);
-    infoText.setTypeface(infoText.getTypeface(), Typeface.NORMAL);
-
-    progressBar.setProgress(0);
-    progressBar.setSecondaryProgress(0);
-    streamButton.setEnabled(true);
-    markAsRead(current.id);
-
+    resetUI();
     new Thread(new Runnable() {
       public void run() {
         startListening();
@@ -171,66 +181,73 @@ public class ListenActivity extends Activity implements OnClickListener,
     }).start();
     Log.d(LOG_TAG, "started playing");
   }
+  
+  private void resetUI() {
+    infoText.setText(current.title);
+    infoText.setTypeface(infoText.getTypeface(), Typeface.NORMAL);
+
+    progressBar.setProgress(0);
+    progressBar.setSecondaryProgress(0);
+    streamButton.setEnabled(true);
+  }
 
   private void enableProgress(boolean enabled) {
     progressBar.setEnabled(enabled);
   }
-  
+
   private void togglePlay() {
-    if (mediaPlayer.isPlaying()) {
-      mediaPlayer.pause();
+    if (player.isPlaying()) {
+      player.pause();
     } else {
-      mediaPlayer.start();
+      player.play();
     }
-    isPlaying = !isPlaying;
     setPlayButton();
   }
 
   @Override
   public void onClick(View v) {
     switch (v.getId()) {
-      case R.id.StreamPlayButton:
-        togglePlay();
-        break;
-      case R.id.StreamPlaylistButton:
-        startActivity(new Intent(this, PlaylistActivity.class));
-        break;
-      case R.id.StreamShareButton:
-        Intent shareIntent = new Intent(android.content.Intent.ACTION_SEND);
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, current.title);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, String.format(
-            "%s: %s", current.title, current.url));
-        shareIntent.setType("text/plain");
-        startActivity(Intent.createChooser(shareIntent,
-            getString(R.string.msg_share_story)));
-        break;
+    case R.id.StreamPlayButton:
+      togglePlay();
+      break;
+    case R.id.StreamPlaylistButton:
+      startActivity(new Intent(this, PlaylistActivity.class));
+      break;
+    case R.id.StreamShareButton:
+      Intent shareIntent = new Intent(android.content.Intent.ACTION_SEND);
+      shareIntent.putExtra(Intent.EXTRA_SUBJECT, current.title);
+      shareIntent.putExtra(Intent.EXTRA_TEXT, String.format("%s: %s",
+          current.title, current.url));
+      shareIntent.setType("text/plain");
+      startActivity(Intent.createChooser(shareIntent,
+          getString(R.string.msg_share_story)));
+      break;
     }
   }
 
   private void setPlayButton() {
     playButton.setEnabled(true);
-    if (mediaPlayer.isPlaying()) {
+    if (player.isPlaying()) {
       playButton.setImageResource(android.R.drawable.ic_media_pause);
     } else {
       playButton.setImageResource(android.R.drawable.ic_media_play);
     }
   }
 
-  private void updateProgress() {
+  public void updateProgress() {
     try {
-      if (mediaPlayer.isPlaying()) {
-        int progress =
-            100 * mediaPlayer.getCurrentPosition() / mediaPlayer.getDuration();
+      if (player.isPlaying()) {
+        int progress = 100 * player.getPosition() / player.getDuration();
         progressBar.setProgress(progress);
-        updatePlayTime(mediaPlayer);
+        updatePlayTime();
       }
     } catch (IllegalStateException e) {
       Log.e(LOG_TAG, "update progress", e);
     }
   }
 
-  private void listen(final String url, boolean stream) throws IllegalArgumentException,
-      IllegalStateException, IOException {
+  private void listen(final String url, boolean stream)
+      throws IllegalArgumentException, IllegalStateException, IOException {
     Log.d(LOG_TAG, "listening to " + url);
 
     if (updateProgressThread != null && updateProgressThread.isAlive()) {
@@ -238,34 +255,15 @@ public class ListenActivity extends Activity implements OnClickListener,
       try {
         updateProgressThread.join();
       } catch (InterruptedException e) {
+        Log.e(LOG_TAG, "error in updateProgressthread", e);
       }
     }
-    String playUrl = url;
-    if (stream) {
-      if (proxy == null) {
-        proxy = new StreamProxy();
-        proxy.init();
-        proxy.start();
-      }
-      String proxyUrl =
-          String.format("http://127.0.0.1:%d/%s", proxy.getPort(), url);
-      playUrl = proxyUrl;
-    }
+    if (!player.isPlaying())
+      player.listen(url, stream);
     handler.sendEmptyMessage(stream ? 3 : 2);
-    mediaPlayer.reset();
-    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-    mediaPlayer.setDataSource(playUrl);
-    Log.d(LOG_TAG, "Preparing: " + playUrl);
-    try {
-      mediaPlayer.prepare();
-    } catch (Exception e) {
-      Log.e("", e.getMessage(), e);
-    }
-    Log.d(LOG_TAG, "Waiting for prepare");
   }
 
   private void startListening() {
-    stopPlaying();
     String url = current.url;
     try {
       if (url == null || url.equals("")) {
@@ -284,14 +282,13 @@ public class ListenActivity extends Activity implements OnClickListener,
     } catch (IOException e) {
       Log.e(LOG_TAG, "", e);
     }
-    isPlaying = true;
     Log.d(LOG_TAG, "playing commenced");
   }
 
   private boolean isPlaylist(String url) {
     return url.indexOf("m3u") > -1 || url.indexOf("pls") > -1;
   }
-  
+
   private void downloadPlaylistAndPlay() throws MalformedURLException,
       IOException {
     String url = current.url;
@@ -334,24 +331,7 @@ public class ListenActivity extends Activity implements OnClickListener,
   protected void onDestroy() {
     super.onDestroy();
     unregisterReceiver(receiver);
-    stopPlaying();
-    if (proxy != null) {
-      proxy.stop();
-    }
-    mediaPlayer.release();
-  }
-
-  private void stopPlaying() {
-    if (updateProgressThread != null && updateProgressThread.isAlive()) {
-      updateProgressThread.interrupt();
-      try {
-        updateProgressThread.join();
-      } catch (InterruptedException e) {
-      }
-    }
-    if(mediaPlayer.isPlaying()) {
-      mediaPlayer.stop();
-    }
+    getApplicationContext().unbindService(conn);
   }
 
   class ListenBroadcastReceiver extends BroadcastReceiver {
@@ -361,8 +341,8 @@ public class ListenActivity extends Activity implements OnClickListener,
       String title = intent.getStringExtra(EXTRA_CONTENT_TITLE);
       long id = intent.getLongExtra(EXTRA_CONTENT_ID, -1);
       boolean enqueue = intent.getBooleanExtra(EXTRA_ENQUEUE, false);
-      boolean playImmediately =
-          intent.getBooleanExtra(EXTRA_PLAY_IMMEDIATELY, false);
+      boolean playImmediately = intent.getBooleanExtra(EXTRA_PLAY_IMMEDIATELY,
+          false);
       boolean stream = intent.getBooleanExtra(EXTRA_STREAM, false);
       Log.d(LOG_TAG, "Received play request: " + url);
       Log.d(LOG_TAG, "  entitled: " + title);
@@ -383,8 +363,9 @@ public class ListenActivity extends Activity implements OnClickListener,
       if (enqueue) {
         addPlaylistItem(entry);
       }
-      if (playImmediately){
+      if (playImmediately) {
         current = entry;
+        PlaybackService.setCurrent(current);
         play();
         drawer.animateOpen();
       }
@@ -393,7 +374,7 @@ public class ListenActivity extends Activity implements OnClickListener,
 
   private static String msecToTime(int msec) {
     int sec = (msec / 1000) % 60;
-    int min = (msec / 1000 / 60) % 60 ;
+    int min = (msec / 1000 / 60) % 60;
     int hour = msec / 1000 / 60 / 60;
     StringBuilder output = new StringBuilder();
     if (hour > 0) {
@@ -406,34 +387,33 @@ public class ListenActivity extends Activity implements OnClickListener,
     return output.toString();
   }
 
-  private void updatePlayTime(MediaPlayer mp) {
-    if (mp.isPlaying()) {
-      String current = msecToTime(mp.getCurrentPosition());
-      String total = msecToTime(mp.getDuration());
+  public void updatePlayTime() {
+    if (player.isPlaying()) {
+      String current = msecToTime(player.getCurrentPosition());
+      String total = msecToTime(player.getDuration());
       lengthText.setText(current + " / " + total);
     }
   }
 
   @Override
   public void onBufferingUpdate(MediaPlayer mp, int percent) {
-    if (percent % 10 != 0) {
+    if (percent > 20 && percent % 5 != 0) {
       // Throttle events, since we get too many of them at first.
       return;
     }
     progressBar.setSecondaryProgress(percent);
-    updatePlayTime(mp);
+    updatePlayTime();
   }
 
   @Override
   public void onCompletion(MediaPlayer mp) {
-    playNext();
+    
   }
 
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
     new AlertDialog.Builder(this).setMessage(
-        "Received error: " + what + ", " + extra).
-        setCancelable(true).show();
+        "Received error: " + what + ", " + extra).setCancelable(true).show();
     setPlayButton();
     return false;
   }
@@ -444,18 +424,15 @@ public class ListenActivity extends Activity implements OnClickListener,
   }
 
   @Override
-  public void onProgressChanged(SeekBar seekBar, int progress,
-      boolean fromUser) {
-    int possibleProgress =
-        progress > seekBar.getSecondaryProgress() ? seekBar
-            .getSecondaryProgress() : progress;
+  public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+    int possibleProgress = progress > seekBar.getSecondaryProgress() ? seekBar
+        .getSecondaryProgress() : progress;
     if (fromUser) {
       // Only seek to position if we've downloaded the content.
-      int msec =
-          mediaPlayer.getDuration() * possibleProgress / seekBar.getMax();
-      mediaPlayer.seekTo(msec);
+      int msec = player.getDuration() * possibleProgress / seekBar.getMax();
+      player.seekTo(msec);
     }
-    updatePlayTime(mediaPlayer);
+    updatePlayTime();
   }
 
   @Override
@@ -468,30 +445,41 @@ public class ListenActivity extends Activity implements OnClickListener,
 
   @Override
   public void onPrepared(MediaPlayer mp) {
-    mediaPlayer.start();
+    current = player.getCurrentEntry();
+    resetUI();
     Log.d(LOG_TAG, "prepared and started");
+    startUpdateThread();
+    drawer.animateClose();
+  }
+
+  private void startUpdateThread() {
     handler.sendEmptyMessage(0);
     updateProgressThread = new Thread(new Runnable() {
       public void run() {
-        try { Thread.sleep(2000); } catch (InterruptedException e) {}
-        while(true) {
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+        }
+        while (true) {
           handler.sendEmptyMessage(1);
-          try { Thread.sleep(500); } catch (InterruptedException e) {
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
             break;
           }
         }
       }
     });
     updateProgressThread.start();
-    drawer.animateClose();
   }
 
-  private static class PlaylistEntry {
+  public static class PlaylistEntry {
     long id;
     final String url;
     final String title;
     final boolean isStream;
     int order;
+
     public PlaylistEntry(long id, String url, String title, boolean isStream,
         int order) {
       this.id = id;
@@ -509,50 +497,27 @@ public class ListenActivity extends Activity implements OnClickListener,
     values.put(Items.IS_READ, false);
     values.put(Items.PLAY_ORDER, PlaylistProvider.getMax(this) + 1);
     Log.d(LOG_TAG, "Adding playlist item to db");
-    Uri insert =
-        getContentResolver().insert(PlaylistProvider.CONTENT_URI, values);
+    Uri insert = getContentResolver().insert(PlaylistProvider.CONTENT_URI,
+        values);
     entry.id = ContentUris.parseId(insert);
   }
 
-  private PlaylistEntry retrievePlaylistItem(int current, boolean next) {
-    String selection = PlaylistProvider.Items.IS_READ + " = ?";
-    String[] selectionArgs = new String[1];
-    selectionArgs[0] = "0";
-    String sort = PlaylistProvider.Items.PLAY_ORDER + (next ? " asc" : " desc");
-    return retrievePlaylistItem(selection, selectionArgs, sort);
-  }
-  
-  private PlaylistEntry getNextPlaylistItem(int current) {
-    return retrievePlaylistItem(current, true);
-  }
-  
-  private PlaylistEntry retrievePlaylistItem(String selection,
-      String[] selectionArgs, String sort) {
-    Cursor cursor =
-        getContentResolver().query(PlaylistProvider.CONTENT_URI, null,
-            selection, selectionArgs, sort);
-    startManagingCursor(cursor);
-    return getFromCursor(cursor);
-  }
-  
   private PlaylistEntry retrievePlaylistEntryById(long id) {
     Uri query = ContentUris.withAppendedId(PlaylistProvider.CONTENT_URI, id);
 
-    Cursor cursor =
-      getContentResolver().query(query, null, null, null,
-          PlaylistProvider.Items.PLAY_ORDER);
+    Cursor cursor = getContentResolver().query(query, null, null, null,
+        PlaylistProvider.Items.PLAY_ORDER);
     startManagingCursor(cursor);
     return getFromCursor(cursor);
   }
-  
+
   private PlaylistEntry getFromCursor(Cursor c) {
     String title = null, url = null;
     long id;
     int order;
     if (c.moveToFirst()) {
       id = c.getInt(c.getColumnIndex(PlaylistProvider.Items._ID));
-      title =
-          c.getString(c.getColumnIndex(PlaylistProvider.Items.NAME));
+      title = c.getString(c.getColumnIndex(PlaylistProvider.Items.NAME));
       url = c.getString(c.getColumnIndex(PlaylistProvider.Items.URL));
       order = c.getInt(c.getColumnIndex(PlaylistProvider.Items.PLAY_ORDER));
       c.close();
@@ -560,13 +525,6 @@ public class ListenActivity extends Activity implements OnClickListener,
     }
     c.close();
     return null;
-  }
-  
-  private void markAsRead(long id) {
-    Uri update = ContentUris.withAppendedId(PlaylistProvider.CONTENT_URI, id);
-    ContentValues values = new ContentValues();
-    values.put(Items.IS_READ, true);
-    int result = getContentResolver().update(update, values, null, null);
   }
 
   @Override

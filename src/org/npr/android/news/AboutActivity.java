@@ -21,6 +21,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -89,10 +90,10 @@ public class AboutActivity extends Activity {
       String fieldName = entry.getKey();
       String fieldValue = entry.getValue();
       sb.append(fieldName)
-        .append(Tracker.PAGE_NAME_SEPARATOR)
-        .append(fieldValue).append("\n");
+        .append(": ")
+        .append("<b>").append(fieldValue).append("</b><br>");
     }
-    view.setText(sb.toString());    
+    view.setText(Html.fromHtml(sb.toString()));
   }
   
   private String getVersionName() {
