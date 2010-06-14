@@ -73,4 +73,6 @@
     <string name="msg_parse_error">There was an error retrieving the requested resource.</string>
 
     <string name="msg_api_key_error">API key not found. You will not be able to use the application without one.</string>
+<string name="msg_item_added_to_playlist">Item added to playlist</string>
+<string name="msg_main_subactivity_nowplaying">Now Playing</string>
 </resources>

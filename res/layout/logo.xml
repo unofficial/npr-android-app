@@ -6,16 +6,12 @@
   android:layout_width="fill_parent"
   android:background="@drawable/header"
   android:layout_gravity="center">
-  <LinearLayout
-    android:id="@+id/LinearLayout01"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_weight="1.0"></LinearLayout>
+  
   <ImageView
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:id="@+id/Logo1"
-    android:layout_gravity="center" android:src="@drawable/npr"></ImageView>
+    android:src="@drawable/npr" android:layout_marginLeft="15dip" android:layout_gravity="center_vertical"></ImageView>
   <ImageView
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"

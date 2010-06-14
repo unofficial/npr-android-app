@@ -46,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.SlidingDrawer;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SlidingDrawer.OnDrawerCloseListener;
 import android.widget.SlidingDrawer.OnDrawerOpenListener;
@@ -181,8 +182,9 @@ public class ListenActivity extends Activity implements OnClickListener,
     }).start();
     Log.d(LOG_TAG, "started playing");
   }
-  
+
   private void resetUI() {
+    Log.d(LOG_TAG, "resetUI()");
     infoText.setText(current.title);
     infoText.setTypeface(infoText.getTypeface(), Typeface.NORMAL);
 
@@ -258,8 +260,8 @@ public class ListenActivity extends Activity implements OnClickListener,
         Log.e(LOG_TAG, "error in updateProgressthread", e);
       }
     }
-    if (!player.isPlaying())
-      player.listen(url, stream);
+    player.stop();
+    player.listen(url, stream);
     handler.sendEmptyMessage(stream ? 3 : 2);
   }
 
@@ -337,6 +339,7 @@ public class ListenActivity extends Activity implements OnClickListener,
   class ListenBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
+      Log.w(LOG_TAG, "broadcast received");
       String url = intent.getStringExtra(EXTRA_CONTENT_URL);
       String title = intent.getStringExtra(EXTRA_CONTENT_TITLE);
       long id = intent.getLongExtra(EXTRA_CONTENT_ID, -1);
@@ -344,6 +347,7 @@ public class ListenActivity extends Activity implements OnClickListener,
       boolean playImmediately = intent.getBooleanExtra(EXTRA_PLAY_IMMEDIATELY,
           false);
       boolean stream = intent.getBooleanExtra(EXTRA_STREAM, false);
+      String storyID = intent.getStringExtra(Constants.EXTRA_STORY_ID);
       Log.d(LOG_TAG, "Received play request: " + url);
       Log.d(LOG_TAG, "  entitled: " + title);
       Log.d(LOG_TAG, "  enqueue: " + enqueue);
@@ -357,11 +361,13 @@ public class ListenActivity extends Activity implements OnClickListener,
           return;
         }
       } else {
-        entry = new PlaylistEntry(id, url, title, stream, -1);
+        entry = new PlaylistEntry(id, url, title, stream, -1, storyID);
       }
 
       if (enqueue) {
         addPlaylistItem(entry);
+        Toast.makeText(getApplicationContext(),
+            R.string.msg_item_added_to_playlist, Toast.LENGTH_SHORT).show();
       }
       if (playImmediately) {
         current = entry;
@@ -407,7 +413,7 @@ public class ListenActivity extends Activity implements OnClickListener,
 
   @Override
   public void onCompletion(MediaPlayer mp) {
-    
+
   }
 
   @Override
@@ -479,14 +485,21 @@ public class ListenActivity extends Activity implements OnClickListener,
     final String title;
     final boolean isStream;
     int order;
+    final String storyID;
 
     public PlaylistEntry(long id, String url, String title, boolean isStream,
         int order) {
+      this(id, url, title, isStream, order, null);
+    }
+
+    public PlaylistEntry(long id, String url, String title, boolean isStream,
+        int order, String storyID) {
       this.id = id;
       this.url = url;
       this.title = title;
       this.isStream = isStream;
       this.order = order;
+      this.storyID = storyID;
     }
   }
 
@@ -496,6 +509,7 @@ public class ListenActivity extends Activity implements OnClickListener,
     values.put(Items.URL, entry.url);
     values.put(Items.IS_READ, false);
     values.put(Items.PLAY_ORDER, PlaylistProvider.getMax(this) + 1);
+    values.put(Items.STORY_ID, entry.storyID);
     Log.d(LOG_TAG, "Adding playlist item to db");
     Uri insert = getContentResolver().insert(PlaylistProvider.CONTENT_URI,
         values);
@@ -504,7 +518,6 @@ public class ListenActivity extends Activity implements OnClickListener,
 
   private PlaylistEntry retrievePlaylistEntryById(long id) {
     Uri query = ContentUris.withAppendedId(PlaylistProvider.CONTENT_URI, id);
-
     Cursor cursor = getContentResolver().query(query, null, null, null,
         PlaylistProvider.Items.PLAY_ORDER);
     startManagingCursor(cursor);
@@ -512,7 +525,7 @@ public class ListenActivity extends Activity implements OnClickListener,
   }
 
   private PlaylistEntry getFromCursor(Cursor c) {
-    String title = null, url = null;
+    String title = null, url = null, storyID = null;
     long id;
     int order;
     if (c.moveToFirst()) {
@@ -520,8 +533,9 @@ public class ListenActivity extends Activity implements OnClickListener,
       title = c.getString(c.getColumnIndex(PlaylistProvider.Items.NAME));
       url = c.getString(c.getColumnIndex(PlaylistProvider.Items.URL));
       order = c.getInt(c.getColumnIndex(PlaylistProvider.Items.PLAY_ORDER));
+      storyID = c.getString(c.getColumnIndex(PlaylistProvider.Items.STORY_ID));
       c.close();
-      return new PlaylistEntry(id, url, title, false, order);
+      return new PlaylistEntry(id, url, title, false, order, storyID);
     }
     c.close();
     return null;

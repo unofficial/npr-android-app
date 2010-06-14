@@ -23,6 +23,7 @@ import android.content.DialogInterface.OnClickListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -137,6 +138,7 @@ public class PodcastActivity extends Activity implements OnItemClickListener,
 
   @Override
   public void onClick(DialogInterface dialog, int which) {
+    Log.w("Podcast", "got Click");
     boolean play = !(which == Dialog.BUTTON_NEGATIVE);
     boolean playNow = play && (which == Dialog.BUTTON_POSITIVE);
     if (play) {
@@ -145,7 +147,7 @@ public class PodcastActivity extends Activity implements OnItemClickListener,
             ListenActivity.EXTRA_CONTENT_URL, lastItem.getUrl()).putExtra(
             ListenActivity.EXTRA_CONTENT_TITLE, lastItem.getTitle());
       i.putExtra(ListenActivity.EXTRA_ENQUEUE, true);
-      
+      i.putExtra(Constants.EXTRA_STORY_ID, (String) null);
       LinkEvent e;
       if (playNow) {
         i.putExtra(ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
@@ -158,6 +160,7 @@ public class PodcastActivity extends Activity implements OnItemClickListener,
                 lastItem.getUrl());
       }
       sendBroadcast(i);
+      Log.w("Podcast", "broadcast sent");
       Tracker.instance(getApplication()).trackLink(e);    
     }
   }

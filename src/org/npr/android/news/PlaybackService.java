@@ -62,6 +62,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
   public static final String EXTRA_ENQUEUE = "extra_enqueue";
   public static final String EXTRA_PLAY_IMMEDIATELY = "extra_play_immediately";
   public static final String EXTRA_STREAM = "extra_stream";
+  public static final String EXTRA_STORY_ID = "extra_story_id";
 
   private static MediaPlayer mediaPlayer;
   public static boolean isRunning = false;
@@ -143,10 +144,15 @@ public class PlaybackService extends Service implements OnPreparedListener,
         | Notification.FLAG_ONGOING_EVENT;
     Context c = getApplicationContext();
     CharSequence title = getString(R.string.app_name);
-
     Intent notificationIntent = new Intent(this, Main.class);
-    PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-        notificationIntent, 0);
+    notificationIntent.setAction(Intent.ACTION_VIEW);
+    notificationIntent.addCategory(Intent.CATEGORY_DEFAULT);
+    notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    if (current.storyID != null) {
+      notificationIntent.putExtra(Constants.EXTRA_STORY_ID, current.storyID);
+    }
+    PendingIntent contentIntent = PendingIntent.getActivity(c, 0,
+        notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
     notification.setLatestEventInfo(c, title, contentText, contentIntent);
     notificationManager.notify(NOTIFICATION_ID, notification);
   }
@@ -308,6 +314,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
         Log.d(LOG_TAG, "playing commenced");
       }
     }
+    isPlaying = false;
   }
 
   private boolean isPlaylist(String url) {
@@ -370,7 +377,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
   }
 
   private PlaylistEntry getFromCursor(Cursor c) {
-    String title = null, url = null;
+    String title = null, url = null, storyID = null;
     long id;
     int order;
     if (c.moveToFirst()) {
@@ -378,8 +385,9 @@ public class PlaybackService extends Service implements OnPreparedListener,
       title = c.getString(c.getColumnIndex(PlaylistProvider.Items.NAME));
       url = c.getString(c.getColumnIndex(PlaylistProvider.Items.URL));
       order = c.getInt(c.getColumnIndex(PlaylistProvider.Items.PLAY_ORDER));
+      storyID = c.getString(c.getColumnIndex(PlaylistProvider.Items.STORY_ID));
       c.close();
-      return new PlaylistEntry(id, url, title, false, order);
+      return new PlaylistEntry(id, url, title, false, order, storyID);
     }
     c.close();
     return null;

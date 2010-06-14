@@ -108,8 +108,34 @@ public class Main extends BackAndForthActivityGroup implements
     logoReceiver = new LogoBroadcastReceiver();
     registerReceiver(logoReceiver, new IntentFilter(this
         .getClass().getName()));
-
-    init(new Intent(this, MainInnerActivity.class));
+    
+    if (!checkIntentForNews(getIntent())) {
+      init(new Intent(this, MainInnerActivity.class));
+    }
+  }
+  
+  @Override
+  public void onNewIntent(Intent newIntent) {
+    super.onNewIntent(newIntent);
+    checkIntentForNews(newIntent);
+  }
+  
+  public boolean checkIntentForNews(Intent intent) {
+    if (intent.getAction().equals(Intent.ACTION_VIEW)) {
+      Bundle extras = intent.getExtras();
+      if (extras == null) {
+        return false;
+      }
+      if (extras.containsKey(Constants.EXTRA_STORY_ID)) {
+        Log.d(LOG_TAG, "story ID is not null");
+        intent.setClass(this, NewsStoryActivity.class);
+        intent.putExtra(Constants.EXTRA_DESCRIPTION, R.string.msg_main_subactivity_nowplaying);
+        
+        goForward(intent, false);
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

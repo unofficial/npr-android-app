@@ -27,13 +27,12 @@
       android:text="@string/msg_station_search_by_other"></RadioButton>
   </RadioGroup>
   <EditText
-    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:id="@+id/StationSearchParamText"
     android:minWidth="50dip"
     android:visibility="gone"
     android:imeOptions="actionDone"
-    android:inputType="text"></EditText>
+    android:inputType="text" android:layout_width="fill_parent"></EditText>
   <Button
     android:text="@string/msg_station_search_now"
     android:layout_width="wrap_content"

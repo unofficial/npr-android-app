@@ -71,8 +71,8 @@ public class PlaylistActivity extends Activity implements OnClickListener,
     startManagingCursor(cursor);
 
     ListAdapter adapter =
-        new SimpleCursorAdapter(this, android.R.layout.simple_list_item_1,
-            cursor, cols, new int[] {android.R.id.text1});
+        new SimpleCursorAdapter(this, R.layout.playlist_item,
+            cursor, cols, new int[] {R.id.PlaylistItemText});
 
     ListView listView = (ListView) findViewById(R.id.ListView01);
     listView.setAdapter(adapter);
@@ -118,7 +118,10 @@ public class PlaylistActivity extends Activity implements OnClickListener,
       Log.d(LOG_TAG, "clicked on position " + position + ", id " + playlistId);
       Intent i = new Intent(ListenActivity.class.getName()).putExtra(
           ListenActivity.EXTRA_CONTENT_ID, playlistId).putExtra(
-          ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
+          ListenActivity.EXTRA_PLAY_IMMEDIATELY, true).putExtra(
+          Constants.EXTRA_STORY_ID, c.getString(
+              c.getColumnIndex(PlaylistProvider.Items.STORY_ID))).putExtra(
+                  "description", "");
       sendBroadcast(i);
     }
     finish();

@@ -1,0 +1,20 @@
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:gravity="center_vertical"
+  android:minHeight="?android:attr/listPreferredItemHeight">
+  <ImageView
+    android:id="@+id/StationItemPlayableImage"
+    android:layout_width="16dip"
+    android:layout_height="16dip"
+    android:src="@drawable/icon_listen_main"
+    android:layout_gravity="center_vertical" android:layout_marginLeft="8dip" android:layout_marginRight="8dip"></ImageView>
+  
+  <TextView
+    android:paddingLeft="5dip"
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:textAppearance="?android:attr/textAppearanceMedium" android:id="@+id/PlaylistItemText"></TextView>
+</LinearLayout>

@@ -17,6 +17,8 @@ package org.npr.android.news;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -60,6 +62,13 @@ public class StationSearchActivity extends Activity implements
     searchNow.setOnClickListener(this);
     Tracker.instance(getApplication()).trackLink(new StationSearchEvent());
   }
+  
+  @Override
+  public void onResume() {
+    super.onResume();
+    SharedPreferences prefs = getSharedPreferences("StationSearch", 0);
+    searchParam.setText(prefs.getString("lastSearch", ""));
+  }
 
   @Override
   public void onClick(View v) {
@@ -82,6 +91,10 @@ public class StationSearchActivity extends Activity implements
             } else {
 
             }
+            Editor editor = getSharedPreferences("StationSearch", 0).edit();
+            editor.putString("lastSearch", query);
+            editor.commit();
+            Log.d(LOG_TAG, "Saved last search query");
             break;
         }
         String url =

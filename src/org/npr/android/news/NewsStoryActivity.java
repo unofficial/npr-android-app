@@ -212,7 +212,7 @@ public class NewsStoryActivity extends BackAndForthActivity implements
       new Intent(ListenActivity.class.getName()).putExtra(
             ListenActivity.EXTRA_CONTENT_URL, getPlayableUrl(a)).putExtra(
             ListenActivity.EXTRA_CONTENT_TITLE, story.getTitle()).putExtra(
-            ListenActivity.EXTRA_ENQUEUE, true);
+            ListenActivity.EXTRA_ENQUEUE, true).putExtra(Constants.EXTRA_STORY_ID, storyId);
     LinkEvent e;
     if (playNow) {
       i.putExtra(ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
