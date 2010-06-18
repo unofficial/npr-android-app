@@ -170,6 +170,9 @@ public class StreamProxy implements Runnable {
     Log.d(getClass().getName(), "processing");
     String url = request.getRequestLine().getUri();
     HttpResponse realResponse = download(url);
+    if (realResponse == null) {
+      return;
+    }
 
     Log.d(getClass().getName(), "downloading...");
 

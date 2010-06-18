@@ -162,14 +162,18 @@ public class NewsListAdapter extends ArrayAdapter<Story> {
       Log.e(LOG_TAG, "", e);
     }
 
-    Log.d(LOG_TAG, "stories: " + stories.getNodeName());
+    if (stories == null) {
+      Log.d(LOG_TAG, "stories: none");
+    } else {
+      Log.d(LOG_TAG, "stories: " + stories.getNodeName());
 
-    moreStories = StoryFactory.parseStories(stories);
-    if (moreStories != null) {
-      if (moreStories.size() < count) {
-        endReached = true;
+      moreStories = StoryFactory.parseStories(stories);
+      if (moreStories != null) {
+        if (moreStories.size() < count) {
+          endReached = true;
+        }
+        NewsListActivity.addAllToStoryCache(moreStories);
       }
-      NewsListActivity.addAllToStoryCache(moreStories);
     }
   }
 }
