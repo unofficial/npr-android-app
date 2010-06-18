@@ -37,6 +37,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -110,6 +112,13 @@ public class ListenActivity extends Activity implements OnClickListener,
 
   private ServiceConnection conn;
   private PlaybackService player;
+  
+  private boolean isPausedInCall = false;
+  private TelephonyManager telephonyManager = null;
+  private PhoneStateListener listener = null;
+
+  // amount of time to rewind playback when resuming after call 
+  private final static int RESUME_REWIND_TIME = 3000;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -138,6 +147,39 @@ public class ListenActivity extends Activity implements OnClickListener,
 
     lengthText = (TextView) findViewById(R.id.StreamLengthText);
     lengthText.setText("");
+    
+    telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+    // Create a PhoneStateListener to watch for offhook and idle events
+    listener = new PhoneStateListener() {
+      @Override
+      public void onCallStateChanged(int state, String incomingNumber) {
+        switch (state) {
+        case TelephonyManager.CALL_STATE_OFFHOOK:
+          // phone going offhook, pause the player
+          if (player != null && player.isPlaying()) {
+            player.pause();
+            isPausedInCall = true;
+            setPlayButton();
+          }
+          break;
+        case TelephonyManager.CALL_STATE_IDLE:
+          // phone idle.  rewind a couple of seconds and start playing
+          if (isPausedInCall && player != null) {
+            int resumePosition = player.getPosition() - RESUME_REWIND_TIME;
+            if (resumePosition < 0) {
+              resumePosition = 0;
+            }
+            player.seekTo(resumePosition);
+            player.play();
+            setPlayButton();
+          }
+          break;
+        }
+      }
+    };
+
+    // Register the listener with the telephony manager
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE);
 
     registerReceiver(receiver, new IntentFilter(this.getClass().getName()));
 
@@ -198,6 +240,10 @@ public class ListenActivity extends Activity implements OnClickListener,
   }
 
   private void togglePlay() {
+    // cancel pause while in a phone call if user manually starts playing
+    if (isPausedInCall) {
+      isPausedInCall = false;
+    } 
     if (player.isPlaying()) {
       player.pause();
     } else {
@@ -332,6 +378,9 @@ public class ListenActivity extends Activity implements OnClickListener,
   @Override
   protected void onDestroy() {
     super.onDestroy();
+    if (telephonyManager != null && listener != null) {
+      telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE);
+    }
     unregisterReceiver(receiver);
     getApplicationContext().unbindService(conn);
   }
