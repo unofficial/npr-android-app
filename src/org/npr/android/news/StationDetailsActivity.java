@@ -171,8 +171,12 @@ public class StationDetailsActivity extends BackAndForthActivity implements
         (ExpandableListView) findViewById(R.id.ExpandableListView01);
     list.setAdapter(listAdapter);
     list.setOnChildClickListener(this);
-    // Expand first header
-    list.expandGroup(0);
+    // Expand first group if present and it has something to show
+    if (listAdapter.getGroupCount() > 0) {
+      if (listAdapter.getChildrenCount(0) > 0) {
+        list.expandGroup(0);
+      }
+    }
   }
 
   @Override
