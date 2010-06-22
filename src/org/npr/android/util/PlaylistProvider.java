@@ -32,7 +32,7 @@ public class PlaylistProvider extends ContentProvider {
   public static final Uri CONTENT_URI = Uri
       .parse("content://org.npr.android.util.Playlist");
   private static final String DATABASE_NAME = "playlist.db";
-  protected static final int DATABASE_VERSION = 2;
+  protected static final int DATABASE_VERSION = 3;
   protected static final String TABLE_NAME = "items";
   private static final String LOG_TAG = PlaylistProvider.class.getName();
   private PlaylistHelper helper;
@@ -166,7 +166,7 @@ public class PlaylistProvider extends ContentProvider {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       Log.w(PlaylistHelper.class.getName(), "Upgrading database from version "
           + oldVersion + " to " + newVersion);
-      if (newVersion < 2) {
+      if (newVersion <= 3) {
         db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN "
             + Items.STORY_ID + " TEXT DEFAULT NULL;");
       }
