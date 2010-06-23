@@ -46,6 +46,7 @@ import android.media.MediaPlayer.OnInfoListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.SeekBar;
@@ -174,7 +175,16 @@ public class PlaybackService extends Service implements OnPreparedListener,
     Log.d(LOG_TAG, "listening to " + url);
 
     String playUrl = url;
-    if (stream) {
+
+    // From 2.2 on (SDK ver 8), the local mediaplayer can handle Shoutcast
+    // streams natively. Let's detect that, and not proxy.
+    Log.w(LOG_TAG, Build.VERSION.SDK);
+    int sdkVersion = 0;
+    try {
+      sdkVersion = Integer.parseInt(Build.VERSION.SDK);
+    } catch (NumberFormatException e) { }
+
+    if (stream && sdkVersion < 8) {
       if (proxy == null) {
         proxy = new StreamProxy();
         proxy.init();

@@ -285,8 +285,10 @@ public class ListenActivity extends Activity implements OnClickListener,
   public void updateProgress() {
     try {
       if (player.isPlaying()) {
-        int progress = 100 * player.getPosition() / player.getDuration();
-        progressBar.setProgress(progress);
+        if (player.getDuration() > 0) {
+          int progress = 100 * player.getPosition() / player.getDuration();
+          progressBar.setProgress(progress);
+        }
         updatePlayTime();
       }
     } catch (IllegalStateException e) {
