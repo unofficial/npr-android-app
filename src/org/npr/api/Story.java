@@ -586,37 +586,46 @@ public class Story extends ApiElement {
           !node.hasChildNodes()) {
         return null;
       }
+      
       StoryBuilder sb = new StoryBuilder(node.getAttributes().getNamedItem(
-              "id").getNodeValue());
-      Log.d(LOG_TAG, "parsing story " + sb.id);
-      for (Node n : new IterableNodeList(node.getChildNodes())) {
-        String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
-        if (nodeName.equals("title")) {
-          sb.withTitle(nodeChild.getNodeValue());
-        } else if (nodeName.equals("teaser")) {
-          sb.withTeaser(nodeChild.getNodeValue());
-        } else if (nodeName.equals("miniTeaser")) {
-          sb.withMiniTeaser(nodeChild.getNodeValue());
-        } else if (nodeName.equals("storyDate")) {
-          sb.withStoryDate(nodeChild.getNodeValue());
-        } else if (nodeName.equals("pubDate")) {
-          sb.withPubDate(nodeChild.getNodeValue());
-        } else if (nodeName.equals("byline")) {
-          sb.withByline(parseByline(n));
-        } else if (nodeName.equals("textWithHtml")) {
-          sb.withTextWithHtml(new TextWithHtml(parseParagraphs(n)));
-        } else if (nodeName.equals("text")) {
-          sb.withText(new Text(parseParagraphs(n)));
-        } else if (nodeName.equals("audio")) {
-          sb.withAudio(parseAudio(n));
-        } else if (nodeName.equals("image")) {
-          sb.withImage(parseImage(n));
-        } else if (nodeName.equals("organization")) {
-          sb.withOrganization(parseOrganization(n));
-        } else if (nodeName.equals("parent")) {
-          sb.withParent(parseParent(n));
+        "id").getNodeValue());
+      try {
+        Log.d(LOG_TAG, "parsing story " + sb.id);
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+          String nodeName = n.getNodeName();
+          Node nodeChild = n.getChildNodes().item(0);
+          if (nodeChild == null) {
+            continue;
+          }
+          if (nodeName.equals("title")) {
+            sb.withTitle(nodeChild.getNodeValue());
+          } else if (nodeName.equals("teaser")) {
+            sb.withTeaser(nodeChild.getNodeValue());
+          } else if (nodeName.equals("miniTeaser")) {
+            sb.withMiniTeaser(nodeChild.getNodeValue());
+          } else if (nodeName.equals("storyDate")) {
+            sb.withStoryDate(nodeChild.getNodeValue());
+          } else if (nodeName.equals("pubDate")) {
+            sb.withPubDate(nodeChild.getNodeValue());
+          } else if (nodeName.equals("byline")) {
+            sb.withByline(parseByline(n));
+          } else if (nodeName.equals("textWithHtml")) {
+            sb.withTextWithHtml(new TextWithHtml(parseParagraphs(n)));
+          } else if (nodeName.equals("text")) {
+            sb.withText(new Text(parseParagraphs(n)));
+          } else if (nodeName.equals("audio")) {
+            sb.withAudio(parseAudio(n));
+          } else if (nodeName.equals("image")) {
+            sb.withImage(parseImage(n));
+          } else if (nodeName.equals("organization")) {
+            sb.withOrganization(parseOrganization(n));
+          } else if (nodeName.equals("parent")) {
+            sb.withParent(parseParent(n));
+          }
         }
+      } catch (Exception e) {
+        Log.e(LOG_TAG, "", e);
+        return null;
       }
       return sb.build();
     }
