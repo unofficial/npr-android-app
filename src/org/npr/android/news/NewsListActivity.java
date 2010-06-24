@@ -127,6 +127,7 @@ public class NewsListActivity extends BackAndForthActivity implements
 
   @Override
   public void refresh(){
+    listAdapter.clear();
     addStories();
   }
 }
