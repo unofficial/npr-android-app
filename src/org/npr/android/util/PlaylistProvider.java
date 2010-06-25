@@ -22,6 +22,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
@@ -32,7 +33,7 @@ public class PlaylistProvider extends ContentProvider {
   public static final Uri CONTENT_URI = Uri
       .parse("content://org.npr.android.util.Playlist");
   private static final String DATABASE_NAME = "playlist.db";
-  protected static final int DATABASE_VERSION = 3;
+  protected static final int DATABASE_VERSION = 2;
   protected static final String TABLE_NAME = "items";
   private static final String LOG_TAG = PlaylistProvider.class.getName();
   private PlaylistHelper helper;
@@ -167,8 +168,14 @@ public class PlaylistProvider extends ContentProvider {
       Log.w(PlaylistHelper.class.getName(), "Upgrading database from version "
           + oldVersion + " to " + newVersion);
       if (newVersion <= 3) {
-        db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN "
-            + Items.STORY_ID + " TEXT DEFAULT NULL;");
+        try {
+          // TODO: This is kind of a hack, and it would be better to check for
+          // the existence of the column first.
+          db.execSQL("ALTER TABLE " + TABLE_NAME + " ADD COLUMN "
+              + Items.STORY_ID + " TEXT DEFAULT NULL;");
+        } catch (SQLException error) {
+          Log.e(LOG_TAG, error.toString());
+        }
       }
     }
   }
