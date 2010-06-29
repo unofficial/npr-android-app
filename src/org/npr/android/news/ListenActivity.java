@@ -155,7 +155,8 @@ public class ListenActivity extends Activity implements OnClickListener,
       public void onCallStateChanged(int state, String incomingNumber) {
         switch (state) {
         case TelephonyManager.CALL_STATE_OFFHOOK:
-          // phone going offhook, pause the player
+        case TelephonyManager.CALL_STATE_RINGING:
+          // phone going offhook or ringing, pause the player
           if (player != null && player.isPlaying()) {
             player.pause();
             isPausedInCall = true;
