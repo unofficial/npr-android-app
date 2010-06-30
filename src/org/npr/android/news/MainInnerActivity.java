@@ -193,7 +193,7 @@ public class MainInnerActivity extends BackAndForthActivity implements
     Intent i = new Intent(ListenActivity.class.getName())
         .putExtra(ListenActivity.EXTRA_CONTENT_URL, hourlyGuid)
         .putExtra(ListenActivity.EXTRA_CONTENT_TITLE, hourlyTitle)
-        .putExtra(ListenActivity.EXTRA_ENQUEUE, true)
+        .putExtra(ListenActivity.EXTRA_ENQUEUE, false)
         .putExtra(ListenActivity.EXTRA_CONTENT_URL, hourlyURL)
         .putExtra(ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
       
