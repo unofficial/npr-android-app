@@ -37,7 +37,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -67,7 +66,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
 
   private static MediaPlayer mediaPlayer;
   public static boolean isRunning = false;
-  private boolean isPlaying = false;
+  private static boolean isPrepared = false;
   private StreamProxy proxy;
   private NotificationManager notificationManager;
   private static final int NOTIFICATION_ID = 1;
@@ -99,13 +98,16 @@ public class PlaybackService extends Service implements OnPreparedListener,
     bindCount--;
     parent = null;
     Log.w(LOG_TAG, "Unbinding PlaybackService");
-    if (!mediaPlayer.isPlaying() && bindCount == 0)
+    if (!isPlaying() && bindCount == 0)
       stopSelf();
     return false;
   }
 
-  public Boolean isPlaying() {
-    return isPlaying;
+  synchronized public Boolean isPlaying() {
+    if (isPrepared) {
+      return mediaPlayer.isPlaying();
+    }
+    return false;
   }
 
   public PlaylistEntry getCurrentEntry() {
@@ -117,26 +119,42 @@ public class PlaybackService extends Service implements OnPreparedListener,
     current = c;
   }
 
-  public int getPosition() {
-    return mediaPlayer.getCurrentPosition();
+  synchronized public int getPosition() {
+    if (isPrepared) {
+      return mediaPlayer.getCurrentPosition();
+    }
+    return 0;
   }
 
-  public int getDuration() {
-    return mediaPlayer.getDuration();
+  synchronized public int getDuration() {
+    if (isPrepared) {
+      return mediaPlayer.getDuration();
+    }
+    return 0;
   }
 
-  public int getCurrentPosition() {
-    return mediaPlayer.getCurrentPosition();
+  synchronized public int getCurrentPosition() {
+    if (isPrepared) {
+      return mediaPlayer.getCurrentPosition();
+    }
+    return 0;
   }
 
-  public void seekTo(int pos) {
-    mediaPlayer.seekTo(pos);
+  synchronized public void seekTo(int pos) {
+    if (isPrepared) {
+      mediaPlayer.seekTo(pos);
+    }
   }
 
-  public void play() {
+  synchronized public void play() {
+    if (!isPrepared) {
+      Log.e(LOG_TAG, "play - not prepared" + current.id);
+      return;
+    }
+    Log.d(LOG_TAG, "play " + current.id);
     mediaPlayer.start();
     markAsRead(current.id);
-    isPlaying = true;
+    
     int icon = R.drawable.stat_notify_musicplayer;
     CharSequence contentText = current.title;
     long when = System.currentTimeMillis();
@@ -158,24 +176,26 @@ public class PlaybackService extends Service implements OnPreparedListener,
     notificationManager.notify(NOTIFICATION_ID, notification);
   }
 
-  public void pause() {
-    mediaPlayer.pause();
-    isPlaying = false;
+  synchronized public void pause() {
+    Log.d(LOG_TAG, "pause");
+    if (isPrepared) {
+      mediaPlayer.pause();
+    }
     notificationManager.cancel(NOTIFICATION_ID);
   }
 
-  public void stop() {
-    mediaPlayer.stop();
-    isPlaying = false;
+  synchronized public void stop() {
+    Log.d(LOG_TAG, "stop");
+    if (isPrepared) {
+      mediaPlayer.stop();
+    }
     notificationManager.cancel(NOTIFICATION_ID);
   }
 
   public void listen(final String url, boolean stream)
       throws IllegalArgumentException, IllegalStateException, IOException {
-    Log.d(LOG_TAG, "listening to " + url);
-
+    Log.d(LOG_TAG, "listening to " + url + " stream=" + stream);
     String playUrl = url;
-
     // From 2.2 on (SDK ver 8), the local mediaplayer can handle Shoutcast
     // streams natively. Let's detect that, and not proxy.
     Log.w(LOG_TAG, Build.VERSION.SDK);
@@ -194,21 +214,51 @@ public class PlaybackService extends Service implements OnPreparedListener,
           proxy.getPort(), url);
       playUrl = proxyUrl;
     }
-    mediaPlayer.reset();
-    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-    mediaPlayer.setDataSource(playUrl);
-    Log.d(LOG_TAG, "Preparing: " + playUrl);
-    try {
-      mediaPlayer.prepare();
-      isPlaying = true;
-    } catch (Exception e) {
-      Log.e("", e.getMessage(), e);
+
+    boolean ready = false;
+    while (!ready) {
+      synchronized (this) {
+        Log.d(LOG_TAG, "reset: " + playUrl);
+        mediaPlayer.reset();
+        mediaPlayer.setDataSource(playUrl);
+        Log.d(LOG_TAG, "Preparing: " + playUrl);
+        mediaPlayer.prepareAsync();
+        Log.d(LOG_TAG, "Waiting for prepare");
+      }
+
+      int maxWaitingCount = 20; // 2 seconds
+      int maxRetryCount = 10;   // 10 * 2 seconds before reset and prepare again
+      int waitingCount = 0;
+      int retryCount = 0;
+      while (!isPrepared) {
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException e) {}
+
+        if (waitingCount++ > maxWaitingCount) {
+          waitingCount = 0;
+          Log.d(LOG_TAG, "Still waiting for prepare");
+
+          if (retryCount++ > maxRetryCount) {
+            break;
+          }
+        }
+      }
+      
+      if (isPrepared) {
+        ready = true;
+      }
     }
-    Log.d(LOG_TAG, "Waiting for prepare");
   }
 
   @Override
   public void onPrepared(MediaPlayer mp) {
+    Log.d(LOG_TAG, "Prepared");
+    synchronized (this) {
+      if (mediaPlayer != null) {
+        isPrepared = true;
+      }
+    }
     play();
     if (parent != null) {
       parent.onPrepared(mp);
@@ -222,8 +272,17 @@ public class PlaybackService extends Service implements OnPreparedListener,
     if (proxy != null) {
       proxy.stop();
     }
-    mediaPlayer.stop();
-    mediaPlayer.release();
+    
+    synchronized (this) {
+      if (mediaPlayer != null) {
+        if (isPrepared && mediaPlayer.isPlaying()) {
+          mediaPlayer.stop();
+        }
+        isPrepared = false;
+        mediaPlayer.release();
+        mediaPlayer = null;
+      }
+    }
     isRunning = false;
   }
 
@@ -249,19 +308,19 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public void onCompletion(MediaPlayer mp) {
     Log.w(LOG_TAG, "onComplete()");
-    isPlaying = false;
     notificationManager.cancel(NOTIFICATION_ID);
     if (parent != null) {
       parent.onCompletion(mp);
     }
     playNext();
-    if (bindCount == 0 && !isPlaying) {
+    if (bindCount == 0 && !isPlaying()) {
       stopSelf();
     }
   }
 
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
+    Log.w(LOG_TAG, "onError(" + what + ", " + extra + ")");
     if (parent != null) {
       return parent.onError(mp, what, extra);
     }
@@ -270,6 +329,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
 
   @Override
   public boolean onInfo(MediaPlayer arg0, int arg1, int arg2) {
+    Log.w(LOG_TAG, "onInfo(" + arg1 + ", " + arg2 + ")");
     if (parent != null) {
       return parent.onInfo(arg0, arg1, arg2);
     }
@@ -324,7 +384,6 @@ public class PlaybackService extends Service implements OnPreparedListener,
         Log.d(LOG_TAG, "playing commenced");
       }
     }
-    isPlaying = false;
   }
 
   private boolean isPlaylist(String url) {
@@ -402,7 +461,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
     c.close();
     return null;
   }
-  
+
   private void markAsRead(long id) {
     Uri update = ContentUris.withAppendedId(PlaylistProvider.CONTENT_URI, id);
     ContentValues values = new ContentValues();
@@ -410,5 +469,4 @@ public class PlaybackService extends Service implements OnPreparedListener,
     @SuppressWarnings("unused")
     int result = getContentResolver().update(update, values, null, null);
   }
-
 }
