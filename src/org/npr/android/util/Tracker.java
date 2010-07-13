@@ -1,6 +1,8 @@
 package org.npr.android.util;
 
 import android.app.Application;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.lang.reflect.Constructor;
@@ -14,6 +16,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.google.android.apps.analytics.GoogleAnalyticsTracker;
+
 public class Tracker {
   private static Tracker tracker;
   private static final String LOG_TAG = Tracker.class.getName();
@@ -26,6 +30,8 @@ public class Tracker {
   private ExecutorService executorService;
   private Object omnitureMeasurement;
   private final Application application;
+  
+  private  GoogleAnalyticsTracker gatracker;
 
   public static final String PAGE_NAME_SEPARATOR = ": ";
   public static Tracker instance(Application application) {
@@ -47,6 +53,25 @@ public class Tracker {
 
   public Tracker(Application application) {
     this.application = application;
+    gatracker = GoogleAnalyticsTracker.getInstance();
+
+    // Start the tracker in manual dispatch mode.
+    // Remember to dispatch() after every trackPageView
+    gatracker.start("UA-5828686-6", application);
+    gatracker.trackPageView("/version%20" + getVersionName());
+    gatracker.dispatch();
+  }
+
+  private String getVersionName() {
+    String version = "";
+    try {
+      PackageInfo pi = application.getPackageManager().getPackageInfo(
+          application.getPackageName(), 0);
+      version = pi.versionName;
+    } catch (PackageManager.NameNotFoundException e) {
+      version = "Package name not found";
+    }
+    return version;
   }
 
   /**
@@ -57,6 +82,7 @@ public class Tracker {
   }
 
   public void finish() {
+    gatracker.stop();
     try {
       // Attempt to let the tracker do its job before we die.
       executorService.shutdown();
@@ -115,6 +141,12 @@ public class Tracker {
   }
 
   public void trackPage(ActivityMeasurement activityMeasurement) {
+    
+    // pass %20 instead of blanks to get blanks to appear in Analytics reports
+    String gaPageName = activityMeasurement.pageName.replace(" ", "%20");
+    gatracker.trackPageView("/" + gaPageName);
+    gatracker.dispatch();
+
     // Any Omniture failures (including not being present) will result in all
     // future calls to be no-ops.
     if (!OMNITURE_PRESENT) {

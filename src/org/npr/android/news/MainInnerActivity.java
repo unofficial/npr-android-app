@@ -129,6 +129,12 @@ public class MainInnerActivity extends BackAndForthActivity implements
     
     // Hourly newscast
     if ( activityID == R.string.msg_main_subactivity_hourly) {
+      // hourly newscast tracking
+      StringBuilder pageName = new StringBuilder(
+          getString(R.string.msg_main_subactivity_hourly));
+      Tracker.instance(getApplication()).trackPage(
+          new ActivityMeasurement(pageName.toString(), "Newscast"));
+
       // Request to show the progress indicator
       Intent showProgress = new Intent(Constants.BROADCAST_PROGRESS)
           .putExtra(Constants.EXTRA_SHOW_PROGRESS, true);
