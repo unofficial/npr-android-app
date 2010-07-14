@@ -1,6 +1,7 @@
 package org.npr.android.util;
 
 import android.app.Application;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -31,7 +32,7 @@ public class Tracker {
   private Object omnitureMeasurement;
   private final Application application;
   
-  private  GoogleAnalyticsTracker gatracker;
+  private  GoogleAnalyticsTracker gatracker = null;
 
   public static final String PAGE_NAME_SEPARATOR = ": ";
   public static Tracker instance(Application application) {
@@ -53,13 +54,30 @@ public class Tracker {
 
   public Tracker(Application application) {
     this.application = application;
-    gatracker = GoogleAnalyticsTracker.getInstance();
+    
+    if (!isDebuggableSet()) {
+      gatracker = GoogleAnalyticsTracker.getInstance();
 
-    // Start the tracker in manual dispatch mode.
-    // Remember to dispatch() after every trackPageView
-    gatracker.start("UA-5828686-6", application);
-    gatracker.trackPageView("/version%20" + getVersionName());
-    gatracker.dispatch();
+      // Start the tracker in manual dispatch mode.
+      // Remember to dispatch() after every trackPageView
+      gatracker.start("UA-5828686-6", application);
+      gatracker.trackPageView("/version%20" + getVersionName());
+      gatracker.dispatch();
+    }
+  }
+
+  private boolean isDebuggableSet() {
+    int flags = 0;
+    try {
+      PackageInfo pi = application.getPackageManager().getPackageInfo(
+          application.getPackageName(), 0);
+      flags = pi.applicationInfo.flags;
+    } catch (PackageManager.NameNotFoundException e) { }
+
+    if ((flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+      return true;
+    }
+    return false;
   }
 
   private String getVersionName() {
@@ -82,7 +100,9 @@ public class Tracker {
   }
 
   public void finish() {
-    gatracker.stop();
+    if (gatracker != null) {
+      gatracker.stop();
+    }
     try {
       // Attempt to let the tracker do its job before we die.
       executorService.shutdown();
@@ -142,10 +162,12 @@ public class Tracker {
 
   public void trackPage(ActivityMeasurement activityMeasurement) {
     
-    // pass %20 instead of blanks to get blanks to appear in Analytics reports
-    String gaPageName = activityMeasurement.pageName.replace(" ", "%20");
-    gatracker.trackPageView("/" + gaPageName);
-    gatracker.dispatch();
+    if (gatracker != null) {
+      // pass %20 instead of blanks to get blanks to appear in Analytics reports
+      String gaPageName = activityMeasurement.pageName.replace(" ", "%20");
+      gatracker.trackPageView("/" + gaPageName);
+      gatracker.dispatch();
+    }
 
     // Any Omniture failures (including not being present) will result in all
     // future calls to be no-ops.
