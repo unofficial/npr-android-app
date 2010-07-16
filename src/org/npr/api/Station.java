@@ -17,6 +17,7 @@ package org.npr.api;
 import android.util.Log;
 
 import org.apache.http.client.ClientProtocolException;
+import org.npr.android.util.NodeUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -220,17 +221,17 @@ public class Station {
         String nodeName = n.getNodeName();
         Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("name")) {
-          sb.withName(nodeChild.getNodeValue());
+          sb.withName(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("band") && nodeChild != null) {
-          sb.withBand(nodeChild.getNodeValue());
+          sb.withBand(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("frequency") && nodeChild != null) {
-          sb.withFrequency(nodeChild.getNodeValue());
+          sb.withFrequency(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("marketCity") && nodeChild != null) {
-          sb.withMarketCity(nodeChild.getNodeValue());
+          sb.withMarketCity(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("tagline") && nodeChild != null) {
-          sb.withTagline(nodeChild.getNodeValue());
+          sb.withTagline(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("image") && nodeChild != null) {
-          sb.withImage(nodeChild.getNodeValue());
+          sb.withImage(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("url")) {
           Attr typeIdAttr = (Attr) n.getAttributes().getNamedItem("typeId");
           Attr typeAttr = (Attr) n.getAttributes().getNamedItem("type");
@@ -238,7 +239,7 @@ public class Station {
           if (typeIdAttr != null && typeAttr != null) {
             String typeId = typeIdAttr.getValue();
             String type = typeAttr.getValue();
-            String url = nodeChild.getNodeValue();
+            String url = NodeUtils.getTextContent(n);
             String title = titleAttr.getValue();
             if (typeId.equals("10") && type.equals("Audio MP3 Stream")
                 && nodeChild != null) {

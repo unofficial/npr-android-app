@@ -17,6 +17,7 @@ package org.npr.api;
 import android.util.Log;
 
 import org.apache.http.client.ClientProtocolException;
+import org.npr.android.util.NodeUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -143,11 +144,11 @@ public class Podcast {
         String nodeName = n.getNodeName();
         Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("title")) {
-          pb.withTitle(nodeChild.getNodeValue());
+          pb.withTitle(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("link") && nodeChild != null) {
-          pb.withLink(nodeChild.getNodeValue());
+          pb.withLink(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("itunes:summary") && nodeChild != null) {
-          pb.withSummary(nodeChild.getNodeValue());
+          pb.withSummary(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("item")) {
           Item item = createItem(n);
           if (item != null) {
@@ -168,11 +169,11 @@ public class Podcast {
         String nodeName = n.getNodeName();
         Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("title")) {
-          title = nodeChild.getNodeValue();
+          title = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("guid") && nodeChild != null) {
-          guid = nodeChild.getNodeValue();
+          guid = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("pubDate") && nodeChild != null) {
-          pubDate = nodeChild.getNodeValue();
+          pubDate = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("enclosure")) {
           Attr urlAttr = (Attr) n.getAttributes().getNamedItem("url");
           if (urlAttr != null) {

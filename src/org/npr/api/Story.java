@@ -17,6 +17,7 @@ package org.npr.api;
 import android.util.Log;
 
 import org.apache.http.client.ClientProtocolException;
+import org.npr.android.util.NodeUtils;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -598,15 +599,15 @@ public class Story extends ApiElement {
             continue;
           }
           if (nodeName.equals("title")) {
-            sb.withTitle(nodeChild.getNodeValue());
+            sb.withTitle(NodeUtils.getTextContent(n));
           } else if (nodeName.equals("teaser")) {
-            sb.withTeaser(nodeChild.getNodeValue());
+            sb.withTeaser(NodeUtils.getTextContent(n));
           } else if (nodeName.equals("miniTeaser")) {
-            sb.withMiniTeaser(nodeChild.getNodeValue());
+            sb.withMiniTeaser(NodeUtils.getTextContent(n));
           } else if (nodeName.equals("storyDate")) {
-            sb.withStoryDate(nodeChild.getNodeValue());
+            sb.withStoryDate(NodeUtils.getTextContent(n));
           } else if (nodeName.equals("pubDate")) {
-            sb.withPubDate(nodeChild.getNodeValue());
+            sb.withPubDate(NodeUtils.getTextContent(n));
           } else if (nodeName.equals("byline")) {
             sb.withByline(parseByline(n));
           } else if (nodeName.equals("textWithHtml")) {
@@ -631,7 +632,7 @@ public class Story extends ApiElement {
     }
 
     private static Parent parseParent(Node node) {
-      String id = null, title = null, website = null;
+      String id = null, title = null;
       boolean isPrimary = false;
       Attr idAttr = (Attr) node.getAttributes().getNamedItem("id");
       if (idAttr != null) {
@@ -644,9 +645,8 @@ public class Story extends ApiElement {
 
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("title")) {
-          title = nodeChild.getNodeValue();
+          title = NodeUtils.getTextContent(n);
         }
       }
       return new Parent(id, isPrimary, title, null, null);
@@ -660,11 +660,10 @@ public class Story extends ApiElement {
       }
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("name")) {
-          name = nodeChild.getNodeValue();
+          name = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("website")) {
-          website = nodeChild.getNodeValue();
+          website = NodeUtils.getTextContent(n);
         }
       }
       return new Organization(id, name, website);
@@ -674,17 +673,16 @@ public class Story extends ApiElement {
       String name = null, htmlLink = null, apiLink = null;
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("name")) {
-          name = nodeChild.getNodeValue();
+          name = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("link")) {
           Attr typeAttr = (Attr) n.getAttributes().getNamedItem("type");
           if (typeAttr != null) {
             String type = typeAttr.getValue();
             if (type.equals("api")) {
-              apiLink = nodeChild.getNodeValue();
+              apiLink = NodeUtils.getTextContent(n);
             } else if (type.equals("html")) {
-              htmlLink = nodeChild.getNodeValue();
+              htmlLink = NodeUtils.getTextContent(n);
             }
           }
         }
@@ -719,7 +717,7 @@ public class Story extends ApiElement {
         String nodeName = n.getNodeName();
         Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("paragraph")) {
-          String paragraph = nodeChild == null ? "" : nodeChild.getNodeValue();
+          String paragraph = nodeChild == null ? "" : NodeUtils.getTextContent(n);
           Attr numAttr = (Attr) n.getAttributes().getNamedItem("num");
           if (numAttr != null) {
             int num = Integer.parseInt(numAttr.getValue());
@@ -742,9 +740,8 @@ public class Story extends ApiElement {
       }
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("duration")) {
-          duration = nodeChild.getNodeValue();
+          duration = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("format")) {
           formats.add(parseFormat(n));
         }
@@ -757,13 +754,12 @@ public class Story extends ApiElement {
 
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("mp3")) {
-          mp3 = nodeChild.getNodeValue();
+          mp3 = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("wm")) {
-          wm = nodeChild.getNodeValue();
+          wm = NodeUtils.getTextContent(n);
         } else if (nodeName.equals("rm")) {
-          rm = nodeChild.getNodeValue();
+          rm = NodeUtils.getTextContent(n);
         }
       }
       return new Audio.Format(mp3, wm, rm);

@@ -5,6 +5,7 @@ package org.npr.api;
 import android.util.Log;
 
 import org.apache.http.client.ClientProtocolException;
+import org.npr.android.util.NodeUtils;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -170,11 +171,10 @@ public abstract class StoryGrouping extends ApiElement implements
               storycountall);
       for (Node n : new IterableNodeList(node.getChildNodes())) {
         String nodeName = n.getNodeName();
-        Node nodeChild = n.getChildNodes().item(0);
         if (nodeName.equals("title")) {
-          sb.withTitle(nodeChild.getNodeValue());
+          sb.withTitle(NodeUtils.getTextContent(n));
         } else if (nodeName.equals("additionalInfo")) {
-          sb.withAdditionalInfo(nodeChild.getNodeValue());
+          sb.withAdditionalInfo(NodeUtils.getTextContent(n));
         }
       }
       return (T) sb.build();

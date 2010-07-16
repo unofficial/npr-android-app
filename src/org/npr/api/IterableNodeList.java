@@ -34,7 +34,7 @@ public class IterableNodeList implements Iterable<Node>, Iterator<Node> {
 
   @Override
   public boolean hasNext() {
-    return index < nodeList.getLength() - 1;
+    return index < nodeList.getLength();
   }
 
   @Override
