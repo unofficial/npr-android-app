@@ -168,11 +168,9 @@ public class NewsTopicActivity extends BackAndForthActivity implements
     String description = item.getTitle();
     String topicId = item.getId();
     Map<String, String> params = new HashMap<String, String>();
-    params.put("id", topicId);
-    params.put("fields", ApiConstants.STORY_FIELDS);
-    if (topic == TopicType.TOPICS) { 
-      params.put("sort", "assigned");      
-    }
+    params.put(ApiConstants.PARAM_ID, topicId);
+    params.put(ApiConstants.PARAM_FIELDS, ApiConstants.STORY_FIELDS);
+    params.put(ApiConstants.PARAM_SORT, "assigned");      
 
     String url =
         ApiConstants.instance().createUrl(ApiConstants.STORY_PATH, params);
