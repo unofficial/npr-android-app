@@ -156,7 +156,7 @@ public class NewsStoryActivity extends BackAndForthActivity implements
           String.format(HTML_FORMAT, "<p class='teaser'>" + story.getTeaser()
               + "</p>");
     }
-    textView.loadData(textHtml, "text/html", "utf-8");
+    textView.loadDataWithBaseURL(null, textHtml, "text/html", "utf-8", null);
 
     if (story.getImages().size() > 0) {
       final String url = story.getImages().get(0).getSrc();
