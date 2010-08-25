@@ -170,7 +170,10 @@ public class NewsTopicActivity extends BackAndForthActivity implements
     Map<String, String> params = new HashMap<String, String>();
     params.put(ApiConstants.PARAM_ID, topicId);
     params.put(ApiConstants.PARAM_FIELDS, ApiConstants.STORY_FIELDS);
-    params.put(ApiConstants.PARAM_SORT, "assigned");      
+    params.put(ApiConstants.PARAM_SORT, "assigned");
+    if (topic == TopicType.PROGRAMS){ 
+      params.put(ApiConstants.PARAM_DATE, "current");
+    }
 
     String url =
         ApiConstants.instance().createUrl(ApiConstants.STORY_PATH, params);

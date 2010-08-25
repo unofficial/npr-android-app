@@ -45,6 +45,7 @@ public class ApiConstants {
   public static final String PARAM_SC_VALUE = "18";
   public static final String PARAM_FIELDS = "fields";
   public static final String PARAM_SORT = "sort";
+  public static final String PARAM_DATE = "date";
 
   public static final String STORY_FIELDS = "title,miniTeaser,teaser,storyDate,byline,text,audio,textWithHtml,image,organization,parent";
   private final String apiKey;
