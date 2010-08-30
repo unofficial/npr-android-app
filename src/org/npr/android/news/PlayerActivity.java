@@ -44,6 +44,7 @@ public abstract class PlayerActivity extends ActivityGroup implements
   private TextView titleText;
   public abstract CharSequence getMainTitle();
   private static final String LOG_TAG = PlayerActivity.class.getName();
+  private ListenView listenView;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -53,15 +54,14 @@ public abstract class PlayerActivity extends ActivityGroup implements
     // when a stream is not playing.
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-    setContentView(R.layout.new_main);
+    setContentView(R.layout.main);
     titleText = (TextView) findViewById(R.id.LogoNavText);
     titleText.setText(getMainTitle());
 
-    // TODO(mfrederick): Re-enable after ListenView is ready.
-//    ListenView lv = new ListenView(this);
-//    ((ViewGroup) findViewById(R.id.MediaPlayer)).addView(lv,
-//        new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT,
-//            LayoutParams.WRAP_CONTENT));
+    listenView = new ListenView(this);
+    ((ViewGroup) findViewById(R.id.MediaPlayer)).addView(listenView,
+        new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT,
+            LayoutParams.WRAP_CONTENT));
   }
 
   @Override
@@ -132,5 +132,17 @@ public abstract class PlayerActivity extends ActivityGroup implements
       this.refresh();
     }
     return super.onOptionsItemSelected(item);
+  }
+
+  @Override
+  protected void onPause() {
+    super.onPause();
+    listenView.detach();
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    listenView.reattach();
   }
 }

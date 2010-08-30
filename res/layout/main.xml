@@ -28,13 +28,13 @@
       </TextView>
     </LinearLayout>
   </LinearLayout>
-  <ViewFlipper
-    android:id="@+id/MainFlipper"
+  <FrameLayout
+    android:id="@+id/Content"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:layout_below="@+id/Logo"
     android:layout_marginBottom="37dip">
-  </ViewFlipper>
+  </FrameLayout>
   <FrameLayout
     android:id="@+id/MediaPlayer"
     android:layout_width="fill_parent"
