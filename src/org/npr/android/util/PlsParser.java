@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class PlsParser implements PlaylistParser {
   private final BufferedReader reader;
@@ -29,19 +31,22 @@ public class PlsParser implements PlaylistParser {
   }
 
   @Override
-  public String getNextUrl() {
-    String url = "";
+  public List<String> getUrls() {
+    LinkedList<String> urls = new LinkedList<String>();
     while (true) {
       try {
-        url = parseLine(reader.readLine());
-        if (url == null || !url.equals("")) {
+        String line = reader.readLine();
+        String url;
+        if (line == null) {
           break;
+        } else if (!(url = parseLine(reader.readLine())).equals("")) {
+          urls.add(url);
         }
       } catch (IOException e) {
         e.printStackTrace();
       }
     }
-    return url;
+    return urls;
   }
 
   private String parseLine(String line) {

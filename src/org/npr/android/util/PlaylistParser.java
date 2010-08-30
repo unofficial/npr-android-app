@@ -14,6 +14,8 @@
 
 package org.npr.android.util;
 
+import java.util.List;
+
 public interface PlaylistParser {
-  public String getNextUrl();
+  public List<String> getUrls();
 }

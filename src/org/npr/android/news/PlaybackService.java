@@ -14,20 +14,6 @@
 
 package org.npr.android.news;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-
-import org.npr.android.util.M3uParser;
-import org.npr.android.util.PlaylistParser;
-import org.npr.android.util.PlaylistProvider;
-import org.npr.android.util.PlsParser;
-import org.npr.android.util.PlaylistProvider.Items;
-import org.npr.android.news.ListenActivity.PlaylistEntry;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -48,12 +34,26 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.SeekBar;
-import android.widget.SeekBar.OnSeekBarChangeListener;
+
+import org.npr.android.util.M3uParser;
+import org.npr.android.util.PlaylistEntry;
+import org.npr.android.util.PlaylistParser;
+import org.npr.android.util.PlaylistProvider;
+import org.npr.android.util.PlsParser;
+import org.npr.android.util.PlaylistProvider.Items;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
 
 public class PlaybackService extends Service implements OnPreparedListener,
     OnBufferingUpdateListener, OnCompletionListener, OnErrorListener,
-    OnInfoListener, OnSeekBarChangeListener {
+    OnInfoListener {
 
   private static final String LOG_TAG = PlaybackService.class.toString();
   public static final String EXTRA_CONTENT_URL = "extra_content_url";
@@ -71,8 +71,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
   private NotificationManager notificationManager;
   private static final int NOTIFICATION_ID = 1;
   private int bindCount = 0;
-  private ListenActivity parent = null;
   private static PlaylistEntry current = null;
+  private List<String> playlistUrls;
 
   @Override
   public void onCreate() {
@@ -82,7 +82,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
     mediaPlayer.setOnErrorListener(this);
     mediaPlayer.setOnInfoListener(this);
     mediaPlayer.setOnPreparedListener(this);
-    notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    notificationManager = (NotificationManager) getSystemService(
+      Context.NOTIFICATION_SERVICE);
     Log.w(LOG_TAG, "Playback service created");
     isRunning = true;
   }
@@ -96,7 +97,6 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public boolean onUnbind(Intent arg0) {
     bindCount--;
-    parent = null;
     Log.w(LOG_TAG, "Unbinding PlaybackService");
     if (!isPlaying() && bindCount == 0)
       stopSelf();
@@ -163,13 +163,18 @@ public class PlaybackService extends Service implements OnPreparedListener,
         | Notification.FLAG_ONGOING_EVENT;
     Context c = getApplicationContext();
     CharSequence title = getString(R.string.app_name);
-    Intent notificationIntent = new Intent(this, Main.class);
+    Intent notificationIntent;
+    if (current.storyID != null) {
+      notificationIntent = new Intent(this, NewsStoryActivity.class);
+      notificationIntent.putExtra(Constants.EXTRA_STORY_ID, current.storyID);
+      notificationIntent.putExtra(Constants.EXTRA_DESCRIPTION,
+        R.string.msg_main_subactivity_nowplaying);
+    } else {
+      notificationIntent = new Intent(this, Main.class);
+    }
     notificationIntent.setAction(Intent.ACTION_VIEW);
     notificationIntent.addCategory(Intent.CATEGORY_DEFAULT);
     notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    if (current.storyID != null) {
-      notificationIntent.putExtra(Constants.EXTRA_STORY_ID, current.storyID);
-    }
     PendingIntent contentIntent = PendingIntent.getActivity(c, 0,
         notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
     notification.setLatestEventInfo(c, title, contentText, contentIntent);
@@ -192,8 +197,17 @@ public class PlaybackService extends Service implements OnPreparedListener,
     notificationManager.cancel(NOTIFICATION_ID);
   }
 
-  public void listen(final String url, boolean stream)
+  public void listen(String url, boolean stream)
       throws IllegalArgumentException, IllegalStateException, IOException {
+    if (isPlaylist(url)) {
+      downloadPlaylist();
+      if (playlistUrls.size() > 0) {
+        url = playlistUrls.remove(0);
+      } else {
+        return;
+      }
+    }
+
     Log.d(LOG_TAG, "listening to " + url + " stream=" + stream);
     String playUrl = url;
     // From 2.2 on (SDK ver 8), the local mediaplayer can handle Shoutcast
@@ -260,14 +274,13 @@ public class PlaybackService extends Service implements OnPreparedListener,
       }
     }
     play();
-    if (parent != null) {
-      parent.onPrepared(mp);
-    }
+//    if (parent != null) {
+//      parent.onPrepared(mp);
+//    }
   }
 
   @Override
   public void onDestroy() {
-    parent = null;
     super.onDestroy();
     if (proxy != null) {
       proxy.stop();
@@ -291,27 +304,38 @@ public class PlaybackService extends Service implements OnPreparedListener,
     public PlaybackService getService() {
       return PlaybackService.this;
     }
-
-    public void setListener(ListenActivity l) {
-      parent = l;
-    }
-
   }
 
   @Override
   public void onBufferingUpdate(MediaPlayer arg0, int arg1) {
-    if (parent != null) {
-      parent.onBufferingUpdate(arg0, arg1);
-    }
+//    if (parent != null) {
+//      parent.onBufferingUpdate(arg0, arg1);
+//    }
   }
 
   @Override
   public void onCompletion(MediaPlayer mp) {
     Log.w(LOG_TAG, "onComplete()");
     notificationManager.cancel(NOTIFICATION_ID);
-    if (parent != null) {
-      parent.onCompletion(mp);
+//    if (parent != null) {
+//      parent.onCompletion(mp);
+//    }
+    
+    if (playlistUrls != null && playlistUrls.size() > 0) {
+      // Unfinished playlist
+      String url = playlistUrls.remove(0);
+      try {
+        listen(url, current.isStream);
+      } catch (IllegalArgumentException e) {
+        Log.e(LOG_TAG, "", e);
+      } catch (IllegalStateException e) {
+        Log.e(LOG_TAG, "", e);
+      } catch (IOException e) {
+        Log.e(LOG_TAG, "", e);
+      }
+      return;
     }
+
     playNext();
     if (bindCount == 0 && !isPlaying()) {
       stopSelf();
@@ -321,40 +345,19 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
     Log.w(LOG_TAG, "onError(" + what + ", " + extra + ")");
-    if (parent != null) {
-      return parent.onError(mp, what, extra);
-    }
+//    if (parent != null) {
+//      return parent.onError(mp, what, extra);
+//    }
     return false;
   }
 
   @Override
   public boolean onInfo(MediaPlayer arg0, int arg1, int arg2) {
     Log.w(LOG_TAG, "onInfo(" + arg1 + ", " + arg2 + ")");
-    if (parent != null) {
-      return parent.onInfo(arg0, arg1, arg2);
-    }
+//    if (parent != null) {
+//      return parent.onInfo(arg0, arg1, arg2);
+//    }
     return false;
-  }
-
-  @Override
-  public void onProgressChanged(SeekBar arg0, int arg1, boolean arg2) {
-    if (parent != null) {
-      parent.onProgressChanged(arg0, arg1, arg2);
-    }
-  }
-
-  @Override
-  public void onStartTrackingTouch(SeekBar seekBar) {
-    if (parent != null) {
-      parent.onStartTrackingTouch(seekBar);
-    }
-  }
-
-  @Override
-  public void onStopTrackingTouch(SeekBar seekBar) {
-    if (parent != null) {
-      parent.onStopTrackingTouch(seekBar);
-    }
   }
 
   private void playNext() {
@@ -368,8 +371,6 @@ public class PlaybackService extends Service implements OnPreparedListener,
           if (url == null || url.equals("")) {
             Log.d(LOG_TAG, "no url");
             // Do nothing.
-          } else if (isPlaylist(url)) {
-            downloadPlaylistAndPlay();
           } else {
             listen(url, current.isStream);
           }
@@ -390,8 +391,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
     return url.indexOf("m3u") > -1 || url.indexOf("pls") > -1;
   }
 
-  private void downloadPlaylistAndPlay() throws MalformedURLException,
-      IOException {
+  private void downloadPlaylist() throws MalformedURLException, IOException {
     String url = current.url;
     Log.d(LOG_TAG, "downloading " + url);
     URLConnection cn = new URL(url).openConnection();
@@ -422,8 +422,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
     } else {
       return;
     }
-    String mp3Url = parser.getNextUrl();
-    listen(mp3Url, current.isStream);
+    playlistUrls = parser.getUrls();
   }
 
   private PlaylistEntry retrievePlaylistItem(int current, boolean next) {
