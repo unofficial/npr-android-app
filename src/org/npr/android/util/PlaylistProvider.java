@@ -159,6 +159,7 @@ public class PlaylistProvider extends ContentProvider {
           + " INTEGER," + Items.STORY_ID + " TEXT" + ");");
     }
 
+    @SuppressWarnings("unused")
     private void dropTable(SQLiteDatabase db) {
       db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
     }

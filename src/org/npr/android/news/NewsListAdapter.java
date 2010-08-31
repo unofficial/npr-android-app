@@ -15,7 +15,6 @@
 package org.npr.android.news;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Message;
@@ -62,10 +61,6 @@ public class NewsListAdapter extends ArrayAdapter<Story> {
   private Handler handler = new Handler() {
     @Override
     public void handleMessage(Message msg) {
-      Intent i =
-        new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-            Constants.EXTRA_SHOW_PROGRESS, false);
-      NewsListAdapter.this.getContext().sendBroadcast(i);
       if (moreStories != null) {
         remove(null);
         for (Story s : moreStories) {
@@ -134,14 +129,9 @@ public class NewsListAdapter extends ArrayAdapter<Story> {
   }
 
   public void addMoreStories(final String url, final int count) {
-    Intent i =
-      new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-          Constants.EXTRA_SHOW_PROGRESS, true);
-    this.getContext().sendBroadcast(i);
     new Thread(new Runnable() {
       @Override
       public void run() {
-        // TODO Auto-generated method stub
         getMoreStories(url, count);
         handler.sendEmptyMessage(0);
       }

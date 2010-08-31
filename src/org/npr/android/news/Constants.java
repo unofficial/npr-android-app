@@ -22,9 +22,6 @@ public class Constants {
   public static final String EXTRA_QUERY_TERM = "query_term";
   public static final String EXTRA_QUERY_URL = "query_url";
 
-  public static final String EXTRA_SHOW_PROGRESS = "show_progress";
-  public static final String BROADCAST_PROGRESS =
-      Constants.class.getName() + ":" + "broadcast_progress";
   public static final String EXTRA_SHOW_REFRESH = "show_refresh";
   public static final String EXTRA_DESCRIPTION = "extra_description";
   public static final String EXTRA_GROUPING = "extra_grouping";

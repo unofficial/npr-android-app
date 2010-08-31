@@ -17,6 +17,7 @@ package org.npr.android.news;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class NewsListActivity extends BackAndForthActivity implements
+public class NewsListActivity extends PlayerActivity implements
     OnItemClickListener {
 
   private String apiUrl;
@@ -66,9 +67,14 @@ public class NewsListActivity extends BackAndForthActivity implements
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    description = getIntent().getStringExtra(Constants.EXTRA_DESCRIPTION);
     super.onCreate(savedInstanceState);
+
     apiUrl = getIntent().getStringExtra(Constants.EXTRA_QUERY_URL);
-    setContentView(R.layout.news);
+
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.news, container);
+
     ListView listView = (ListView) findViewById(R.id.ListView01);
     listView.setOnItemClickListener(this);
     listAdapter =
@@ -76,7 +82,6 @@ public class NewsListActivity extends BackAndForthActivity implements
     listView.setAdapter(listAdapter);
 
     grouping = getIntent().getStringExtra(Constants.EXTRA_GROUPING);
-    description = getIntent().getStringExtra(Constants.EXTRA_DESCRIPTION);
 
     topicId = getIntent().getStringExtra(Constants.EXTRA_TOPIC_ID);
     initialSize = getIntent().getIntExtra(Constants.EXTRA_SIZE, 0);
@@ -93,7 +98,7 @@ public class NewsListActivity extends BackAndForthActivity implements
       Intent i = new Intent(this, NewsStoryActivity.class);
       i.putExtra(Constants.EXTRA_STORY_ID, s.getId());
       i.putExtra(Constants.EXTRA_DESCRIPTION, description);
-      ((Main) getParent()).goForward(i, true);
+      startActivityWithoutAnimation(i);
     }
   }
 

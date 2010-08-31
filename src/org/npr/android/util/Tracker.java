@@ -50,6 +50,7 @@ public class Tracker {
       MEASUREMENT_CLASS = null;
     }
     OMNITURE_PRESENT = MEASUREMENT_CLASS != null;
+    Log.w("  !!TRACKER", "omniture is " + OMNITURE_PRESENT);
   }
 
   public Tracker(Application application) {
@@ -113,6 +114,7 @@ public class Tracker {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private Object createMeasurement() throws IllegalAccessException,
       InstantiationException, SecurityException, NoSuchMethodException,
       IllegalArgumentException, InvocationTargetException {

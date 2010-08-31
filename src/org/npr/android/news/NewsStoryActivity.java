@@ -21,6 +21,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.webkit.WebView;
 import android.widget.Button;
@@ -45,7 +46,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 
-public class NewsStoryActivity extends BackAndForthActivity implements
+public class NewsStoryActivity extends PlayerActivity implements
     OnClickListener {
   private static String LOG_TAG = NewsStoryActivity.class.getName();
   private String description;
@@ -70,19 +71,17 @@ public class NewsStoryActivity extends BackAndForthActivity implements
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    description = getIntent().getStringExtra(Constants.EXTRA_DESCRIPTION);
     super.onCreate(savedInstanceState);
     storyId = getIntent().getStringExtra(Constants.EXTRA_STORY_ID);
     story = NewsListActivity.getStoryFromCache(storyId);
-    description = getIntent().getStringExtra(Constants.EXTRA_DESCRIPTION);
 
     if (story == null) {
       return;
     }
-    Intent i =
-        new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-            Constants.EXTRA_SHOW_PROGRESS, true);
-    sendBroadcast(i);
-    setContentView(R.layout.news_story);
+
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.news_story, container);
 
     orgId =
         story.getOrganizations().size() > 0 ? story.getOrganizations().get(0)
@@ -179,10 +178,6 @@ public class NewsStoryActivity extends BackAndForthActivity implements
     listenNow.setEnabled(isListenable);
     enqueue.setVisibility(isListenable ? View.VISIBLE : View.GONE);
     enqueue.setEnabled(isListenable);
-
-    i = new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-          Constants.EXTRA_SHOW_PROGRESS, false);
-    sendBroadcast(i);
   }
 
   @Override
@@ -209,13 +204,13 @@ public class NewsStoryActivity extends BackAndForthActivity implements
   private void playStory(boolean playNow) {
     Audio a = getPlayable();
     Intent i =
-      new Intent(ListenActivity.class.getName()).putExtra(
-            ListenActivity.EXTRA_CONTENT_URL, getPlayableUrl(a)).putExtra(
-            ListenActivity.EXTRA_CONTENT_TITLE, story.getTitle()).putExtra(
-            ListenActivity.EXTRA_ENQUEUE, true).putExtra(Constants.EXTRA_STORY_ID, storyId);
+      new Intent(ListenView.class.getName()).putExtra(
+            ListenView.EXTRA_CONTENT_URL, getPlayableUrl(a)).putExtra(
+            ListenView.EXTRA_CONTENT_TITLE, story.getTitle()).putExtra(
+            ListenView.EXTRA_ENQUEUE, true).putExtra(Constants.EXTRA_STORY_ID, storyId);
     LinkEvent e;
     if (playNow) {
-      i.putExtra(ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
+      i.putExtra(ListenView.EXTRA_PLAY_IMMEDIATELY, true);
       e = new PlayNowEvent(storyId, story.getTitle(), a.getId());
     } else {
       e = new PlayLaterEvent(storyId, story.getTitle(), a.getId());

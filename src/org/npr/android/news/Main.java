@@ -15,201 +15,206 @@
 package org.npr.android.news;
 
 import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.DialogInterface.OnCancelListener;
-import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup.LayoutParams;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.ViewFlipper;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
 
-import org.npr.android.util.Eula;
 import org.npr.android.util.FileUtils;
 import org.npr.android.util.Tracker;
+import org.npr.android.util.Tracker.ActivityMeasurement;
 import org.npr.api.ApiConstants;
+import org.npr.api.Podcast;
+import org.npr.api.Podcast.Item;
+import org.npr.api.Podcast.PodcastFactory;
 
-public class Main extends BackAndForthActivityGroup implements
-    OnClickListener {
-  public static final String EXTRA_TITLE = "extra_title";
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-  private enum MenuId {
-    EDIT,
-    CLOSE,
-    ABOUT
-  }
+public class Main extends PlayerActivity implements
+    OnItemClickListener {
+  
   private static final String LOG_TAG = Main.class.getName();
-  private TextView logoNav;
-  private ProgressBar progressBar;
-  private BroadcastReceiver progressReceiver;
-  private BroadcastReceiver logoReceiver;
-  public ImageButton refreshButton;
+  
+  private class SubActivity {
+    private final Intent startIntent;
+    private SubActivity(Intent startIntent) {
+      this.startIntent = startIntent;
+    }
+    @Override
+    public String toString() {
+      return Main.this.getString(startIntent.getIntExtra(
+          Constants.EXTRA_SUBACTIVITY_ID, -1));
+    }
+  }
+  
+  private ListView listView;
+  private String hourlyTitle;
+  private String hourlyGuid;
+  private String hourlyURL;
+  private Handler handler = new Handler() {
+    @Override
+    public void handleMessage(Message msg) {
+      switch (msg.what) {
+        case 0:
+          errorMessage();
+          break;
+        case 1:
+          playHourly();
+          break;
+      }
+    }
+  };
 
+  
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // First time the app is launched, it will show this. It will never show it
-    // again once the user accepts the license.
-    Eula.showEula(this);
     initApiKey();
-
-    // Override the normal volume controls so that the user can alter the volume
-    // when a stream is not playing.
-    setVolumeControlStream(AudioManager.STREAM_MUSIC);
-
-    setContentView(R.layout.main);
-
-    flipper = (ViewFlipper) findViewById(R.id.MainFlipper);
-
-    logoNav = (TextView) findViewById(R.id.LogoNavText);
-
-//    ImageButton logoButton = (ImageButton) findViewById(R.id.LogoButton);
-//    logoButton.setOnClickListener(this);
-
-    progressBar = (ProgressBar) findViewById(R.id.ProgressBar01);
-    refreshButton = (ImageButton) findViewById(R.id.RefreshButton);
-    refreshButton.setOnClickListener(this);
-
-    progressReceiver = new ProgressBroadcastReceiver();
-    registerReceiver(progressReceiver,
-        new IntentFilter(Constants.BROADCAST_PROGRESS));
-
-    Intent i = new Intent(this, ListenActivity.class);
-    // Ensure that only one ListenActivity can be launched. Otherwise, we may
-    // get overlapping media players.
-    i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-    Window w =
-      getLocalActivityManager().startActivity(ListenActivity.class.getName(),
-          i);
-    View v = w.getDecorView();
-    ((ViewGroup) findViewById(R.id.MediaPlayer)).addView(v,
-        new ViewGroup.LayoutParams(LayoutParams.FILL_PARENT,
-            LayoutParams.WRAP_CONTENT));
-
-    // A little hacky, but otherwise we get an annoying black line where the
-    // seam of the drawer's edge is.
-    ((FrameLayout)((ViewGroup) v).getChildAt(0)).setForeground(null);
-
-    logoReceiver = new LogoBroadcastReceiver();
-    registerReceiver(logoReceiver, new IntentFilter(this
-        .getClass().getName()));
     
-    if (!checkIntentForNews(getIntent())) {
-      init(new Intent(this, MainInnerActivity.class));
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.main_inner, container);
+
+    listView = (ListView) findViewById(R.id.MainListView);
+    String grouping = null;
+    String description = "Top Stories";
+    String topicId = "1002";
+    Map<String, String> params = new HashMap<String, String>();
+    params.put("id", topicId);
+    params.put("fields", ApiConstants.STORY_FIELDS);
+    params.put("sort", "assigned");
+
+    String newsUrl =
+        ApiConstants.instance().createUrl(ApiConstants.STORY_PATH, params);
+    final SubActivity[] activities = {
+        new SubActivity(new Intent(this, NewsListActivity.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID,
+            R.string.msg_main_subactivity_news).putExtra(
+            Constants.EXTRA_QUERY_URL, newsUrl).putExtra(
+            Constants.EXTRA_DESCRIPTION, description).putExtra(
+            Constants.EXTRA_GROUPING, grouping).putExtra(Constants.EXTRA_SIZE,
+            5)),
+        new SubActivity(new Intent(this, Main.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID, 
+            R.string.msg_main_subactivity_hourly)),
+        new SubActivity(new Intent(this, NewsTopicActivity.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID,
+            R.string.msg_main_subactivity_topics)),
+        new SubActivity(new Intent(this, NewsTopicActivity.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID,
+            R.string.msg_main_subactivity_programs)),
+        new SubActivity(new Intent(this, StationListActivity.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID,
+            R.string.msg_main_subactivity_stations)),
+        new SubActivity(new Intent(this, SearchActivity.class).putExtra(
+            Constants.EXTRA_SUBACTIVITY_ID,
+            R.string.msg_main_subactivity_search))
+        };
+    listView.setAdapter(new MainListAdapter(activities));
+    listView.setOnItemClickListener(this);
+    trackNow();
+  }
+
+  @Override
+  public void onItemClick(AdapterView<?> parent, View view, int position,
+      long id) {
+    SubActivity s = (SubActivity) parent.getItemAtPosition(position);
+    Intent i = s.startIntent;
+    int activityID = i.getIntExtra(Constants.EXTRA_SUBACTIVITY_ID, -1);
+    
+    // Hourly newscast
+    if ( activityID == R.string.msg_main_subactivity_hourly) {
+      // hourly newscast tracking
+      StringBuilder pageName = new StringBuilder(
+          getString(R.string.msg_main_subactivity_hourly));
+      Tracker.instance(getApplication()).trackPage(
+          new ActivityMeasurement(pageName.toString(), "Newscast"));
+
+      // It takes a few seconds to download and parse so run in another thread
+      Thread hourlyDownloader = new Thread(new Runnable() {
+        public void run() {
+          try {
+            final String hourlyUrlCall = 
+                "http://www.npr.org/rss/podcast.php?id=500005";
+            Podcast hourlyPod = PodcastFactory.downloadPodcast(hourlyUrlCall);
+            List<Item> items = hourlyPod.getItems();
+            
+            // The hourly podcast has only one item
+            Item info = items.get(0);
+            
+            // Set the member/instance variables
+            hourlyTitle = info.getTitle();
+            hourlyGuid = info.getGuid();
+            hourlyURL = info.getUrl();
+            
+            // Success! let the activity know it can request playback
+            handler.sendEmptyMessage(1);
+            
+          } catch(Exception e) {
+              Log.e(LOG_TAG, "error downloading hourly", e);
+              handler.sendEmptyMessage(0);
+          }
+        }
+      });
+      
+      hourlyDownloader.start();
     }
+    else {
+      startActivityWithoutAnimation(i);
+    }
+  }
+
+  private class MainListAdapter extends ArrayAdapter<SubActivity> {
+    public MainListAdapter(SubActivity[] activities) {
+      super(Main.this, android.R.layout.simple_list_item_1, android.R.id.text1,
+          activities);
+    }
+  }
+
+  @Override
+  public CharSequence getMainTitle() {
+    return getString(R.string.msg_main_logo);
+  }
+
+  @Override
+  public void trackNow() {
+    StringBuilder pageName = new StringBuilder("Home Screen");
+    Tracker.instance(getApplication()).trackPage(
+        new ActivityMeasurement(pageName.toString(), "Home"));
   }
   
-  @Override
-  public void onNewIntent(Intent newIntent) {
-    super.onNewIntent(newIntent);
-    checkIntentForNews(newIntent);
+  private void playHourly() {
+    // Request to stream audio
+    Intent i = new Intent(ListenView.class.getName())
+        .putExtra(ListenView.EXTRA_CONTENT_URL, hourlyGuid)
+        .putExtra(ListenView.EXTRA_CONTENT_TITLE, hourlyTitle)
+        .putExtra(ListenView.EXTRA_ENQUEUE, false)
+        .putExtra(ListenView.EXTRA_CONTENT_URL, hourlyURL)
+        .putExtra(ListenView.EXTRA_PLAY_IMMEDIATELY, true);
+      
+    sendBroadcast(i);
   }
   
-  public boolean checkIntentForNews(Intent intent) {
-    if (intent.getAction().equals(Intent.ACTION_VIEW)) {
-      Bundle extras = intent.getExtras();
-      if (extras == null) {
-        return false;
-      }
-      if (extras.containsKey(Constants.EXTRA_STORY_ID)) {
-        Log.d(LOG_TAG, "story ID is not null");
-        intent.setClass(this, NewsStoryActivity.class);
-        intent.putExtra(Constants.EXTRA_DESCRIPTION, R.string.msg_main_subactivity_nowplaying);
-        
-        goForward(intent, false);
-        return true;
-      }
-    }
-    return false;
+  private void errorMessage() {
+    // Let the user know something was wrong, most likely a bad connection
+    Toast.makeText(this, 
+        getResources().getString(R.string.msg_main_check_connection), 
+        Toast.LENGTH_SHORT).show();
   }
-
-  @Override
-  public void onSuperDestroy() {
-    unregisterReceiver(progressReceiver);
-    unregisterReceiver(logoReceiver);
-  }
-
-  class ProgressBroadcastReceiver extends BroadcastReceiver {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      boolean showProgress =
-          intent.getBooleanExtra(Constants.EXTRA_SHOW_PROGRESS, false);
-      initRefreshAndProgress(showProgress);
-    }
-  }
-
-  private void initRefreshAndProgress(boolean showProgress) {
-    boolean showRefresh = !showProgress && getCurrentChild().isRefreshable();
-    refreshButton.setVisibility(showRefresh ? View.VISIBLE : View.GONE);
-    progressBar.setVisibility(showProgress ? View.VISIBLE : showRefresh ?
-        View.GONE : View.INVISIBLE);
-  }
-
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    menu.add(Menu.NONE, MenuId.CLOSE.ordinal(), Menu.NONE, "Close")
-        .setIcon(android.R.drawable.ic_menu_close_clear_cancel)
-        .setAlphabeticShortcut('c');
-    menu.add(Menu.NONE, MenuId.ABOUT.ordinal(), Menu.NONE,
-        R.string.msg_main_menu_about).setIcon(android.R.drawable.ic_menu_help)
-        .setAlphabeticShortcut('e');
-    return (super.onCreateOptionsMenu(menu));
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    if (item.getItemId() == MenuId.CLOSE.ordinal()) {
-      finish();
-      return true;
-    } else if (item.getItemId() == MenuId.ABOUT.ordinal()) {
-      startActivity(new Intent(this, AboutActivity.class));
-      return true;
-    }
-    return super.onOptionsItemSelected(item);
-  }
-
-  @Override
-  public void onClick(View v) {
-    switch (v.getId()) {
-//      case R.id.LogoButton:
-//        goTo(0);
-//        break;
-      case R.id.RefreshButton:
-        refresh();
-        break;
-    }
-  }
-
-  private void refresh() {
-    Refreshable r = getCurrentChild();
-    if (r.isRefreshable()) {
-      r.refresh();
-    }
-  }
-
-  class LogoBroadcastReceiver extends BroadcastReceiver {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      String title = intent.getStringExtra(EXTRA_TITLE);
-      logoNav.setText(title);
-    }
-  }
-
+  
   private void initApiKey() {
     String key = "";
     try {
@@ -234,10 +239,5 @@ public class Main extends BackAndForthActivityGroup implements
   protected void onDestroy() {
     super.onDestroy();
     Tracker.instance(getApplication()).finish();
-  }
-
-  @Override
-  public void onChildChanged() {
-    initRefreshAndProgress(false);
   }
 }

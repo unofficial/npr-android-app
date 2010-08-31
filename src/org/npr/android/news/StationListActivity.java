@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -34,7 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class StationListActivity extends BackAndForthActivity implements
+public class StationListActivity extends PlayerActivity implements
     OnItemClickListener, OnClickListener {
 
   public static final String EXTRA_STATION_SEARCH_URL =
@@ -68,10 +69,6 @@ public class StationListActivity extends BackAndForthActivity implements
   private Handler handler = new Handler() {
     @Override
     public void handleMessage(Message msg) {
-      Intent i =
-        new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-            Constants.EXTRA_SHOW_PROGRESS, false);
-      StationListActivity.this.sendBroadcast(i);
       listAdapter.showData();
     }
   };
@@ -79,10 +76,6 @@ public class StationListActivity extends BackAndForthActivity implements
   private Thread listInitThread;
 
   private void initializeList() {
-    Intent i =
-      new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-          Constants.EXTRA_SHOW_PROGRESS, true);
-    this.sendBroadcast(i);
     listInitThread.start();
   }
 
@@ -117,7 +110,8 @@ public class StationListActivity extends BackAndForthActivity implements
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.station_list);
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.station_list, container);
     final ListView lv = (ListView) findViewById(R.id.ListView01);
     final Button searchNow = (Button) findViewById(R.id.StationSearchButton01);
     searchNow.setOnClickListener(this);
@@ -140,7 +134,7 @@ public class StationListActivity extends BackAndForthActivity implements
       new Intent(this, StationDetailsActivity.class).putExtra(
           Constants.EXTRA_STATION_ID, station.getId());
 
-    ((Main) getParent()).goForward(i, true);
+    startActivityWithoutAnimation(i);
   }
 
   @Override

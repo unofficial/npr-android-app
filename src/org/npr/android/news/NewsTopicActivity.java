@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
@@ -36,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class NewsTopicActivity extends BackAndForthActivity implements
+public class NewsTopicActivity extends PlayerActivity implements
     OnItemClickListener {
 
   public static enum TopicType {
@@ -54,10 +55,6 @@ public class NewsTopicActivity extends BackAndForthActivity implements
   private Handler handler = new Handler() {
     @Override
     public void handleMessage(Message msg) {
-      Intent i =
-        new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-            Constants.EXTRA_SHOW_PROGRESS, false);
-      NewsTopicActivity.this.sendBroadcast(i);
       switch (msg.what) {
         case 0:
           listView.setAdapter(listAdapter);
@@ -107,7 +104,8 @@ public class NewsTopicActivity extends BackAndForthActivity implements
         break;
     }
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.news_topics);
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.news_topics, container);
     listView = (ListView) findViewById(R.id.ListView01);
     listView.setOnItemClickListener(this);
 
@@ -115,10 +113,6 @@ public class NewsTopicActivity extends BackAndForthActivity implements
   }
 
   private void initializeList() {
-    Intent i =
-        new Intent(Constants.BROADCAST_PROGRESS).putExtra(
-            Constants.EXTRA_SHOW_PROGRESS, true);
-    this.sendBroadcast(i);
     listInitThread = new Thread(new Runnable() {
       public void run() {
         int result = NewsTopicActivity.this.constructList();
@@ -183,6 +177,6 @@ public class NewsTopicActivity extends BackAndForthActivity implements
     i.putExtra(Constants.EXTRA_DESCRIPTION, description);
     i.putExtra(Constants.EXTRA_GROUPING, grouping);
     i.putExtra(Constants.EXTRA_SIZE, 10);
-    ((Main) getParent()).goForward(i, true);
+    startActivityWithoutAnimation(i);
   }
 }

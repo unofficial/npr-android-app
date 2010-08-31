@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.SimpleExpandableListAdapter;
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-public class StationDetailsActivity extends BackAndForthActivity implements
+public class StationDetailsActivity extends PlayerActivity implements
     OnChildClickListener {
   private String stationId;
   private Station station;
@@ -65,8 +66,6 @@ public class StationDetailsActivity extends BackAndForthActivity implements
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-
     stationId = getIntent().getStringExtra(Constants.EXTRA_STATION_ID);
     station = StationListActivity.getStationFromCache(stationId);
 
@@ -74,7 +73,11 @@ public class StationDetailsActivity extends BackAndForthActivity implements
       finish();
     }
 
-    setContentView(R.layout.station_details);
+    super.onCreate(savedInstanceState);
+
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.station_details, container);
+
     TextView miscText = (TextView) findViewById(R.id.StationMiscText);
     TextView taglineText = (TextView) findViewById(R.id.StationTaglineText);
     miscText.setText(new StringBuilder().append(station.getFrequency()).append(
@@ -197,11 +200,11 @@ public class StationDetailsActivity extends BackAndForthActivity implements
     switch(groupPosition) {
       case 0:
         l = station.getAudioStreams().get(num);
-        i = new Intent(ListenActivity.class.getName()).putExtra(
-                ListenActivity.EXTRA_CONTENT_URL, l.getUrl()).putExtra(
-                ListenActivity.EXTRA_CONTENT_TITLE, l.getTitle()).putExtra(
-                ListenActivity.EXTRA_PLAY_IMMEDIATELY, true).putExtra(
-                ListenActivity.EXTRA_STREAM, true);
+        i = new Intent(ListenView.class.getName()).putExtra(
+                ListenView.EXTRA_CONTENT_URL, l.getUrl()).putExtra(
+                ListenView.EXTRA_CONTENT_TITLE, l.getTitle()).putExtra(
+                ListenView.EXTRA_PLAY_IMMEDIATELY, true).putExtra(
+                ListenView.EXTRA_STREAM, true);
         sendBroadcast(i);
         break;
       case 1:

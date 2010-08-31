@@ -19,6 +19,7 @@ import android.app.DatePickerDialog.OnDateSetListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SearchActivity extends BackAndForthActivity implements
+public class SearchActivity extends PlayerActivity implements
     OnClickListener {
   private EditText searchText;
   private Calendar startDate;
@@ -51,7 +52,9 @@ public class SearchActivity extends BackAndForthActivity implements
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    setContentView(R.layout.search);
+    ViewGroup container = (ViewGroup) findViewById(R.id.Content);
+    ViewGroup.inflate(this, R.layout.search, container);
+
     searchText = (EditText) findViewById(R.id.EditText01);
 
     Date start = new Date();
@@ -96,7 +99,7 @@ public class SearchActivity extends BackAndForthActivity implements
         i.putExtra(Constants.EXTRA_QUERY_TERM, text);
         i.putExtra(Constants.EXTRA_SIZE, 10);
 
-        ((Main) getParent()).goForward(i, true);
+        startActivityWithoutAnimation(i);
         break;
       case R.id.StartDateButton:
         OnDateSetListener callback = new OnDateSetListener() {

@@ -83,11 +83,16 @@ public abstract class PlayerActivity extends ActivityGroup implements
     noAnimation();
   }
 
+  protected void startActivityWithoutAnimation(Intent i) {
+    startActivity(i);
+    noAnimation();
+  }
+
   /**
    * Prevents the default animation on the pending transition. Only works on
    * SDK version 5 and up, but may be safely called from any version.
    */
-  public void noAnimation() {
+  protected void noAnimation() {
     try {
       Method overridePendingTransition =
           Activity.class.getMethod("overridePendingTransition", new Class[] {

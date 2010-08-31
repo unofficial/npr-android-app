@@ -28,8 +28,6 @@
     <activity
       android:name="StationDetailsActivity"></activity>
     <activity
-      android:name="ListenActivity"></activity>
-    <activity
       android:name="NewsStoryActivity"></activity>
     <activity
       android:name="NewsListActivity"></activity>
@@ -47,8 +45,6 @@
       android:name="android.test.runner"></uses-library>
     <activity
       android:name="SearchActivity"></activity>
-    <activity
-      android:name="MainInnerActivity"></activity>
     <activity
       android:name="PlaylistActivity"></activity>
     <activity

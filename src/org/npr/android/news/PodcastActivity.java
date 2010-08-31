@@ -143,14 +143,14 @@ public class PodcastActivity extends Activity implements OnItemClickListener,
     boolean playNow = play && (which == Dialog.BUTTON_POSITIVE);
     if (play) {
       Intent i =
-        new Intent(ListenActivity.class.getName()).putExtra(
-            ListenActivity.EXTRA_CONTENT_URL, lastItem.getUrl()).putExtra(
-            ListenActivity.EXTRA_CONTENT_TITLE, lastItem.getTitle());
-      i.putExtra(ListenActivity.EXTRA_ENQUEUE, true);
+        new Intent(ListenView.class.getName()).putExtra(
+            ListenView.EXTRA_CONTENT_URL, lastItem.getUrl()).putExtra(
+            ListenView.EXTRA_CONTENT_TITLE, lastItem.getTitle());
+      i.putExtra(ListenView.EXTRA_ENQUEUE, true);
       i.putExtra(Constants.EXTRA_STORY_ID, (String) null);
       LinkEvent e;
       if (playNow) {
-        i.putExtra(ListenActivity.EXTRA_PLAY_IMMEDIATELY, true);
+        i.putExtra(ListenView.EXTRA_PLAY_IMMEDIATELY, true);
         e =
             new PodcastNowEvent(lastItem.getTitle(), lastItem.getTitle(),
                 lastItem.getUrl());
