@@ -67,6 +67,10 @@ public class PlaybackService extends Service implements OnPreparedListener,
   private static MediaPlayer mediaPlayer;
   public static boolean isRunning = false;
   private static boolean isPrepared = false;
+  // Why are the above two static?
+  // This is set if the currently playing item fails to play, so that 
+  private boolean currentIsInvalid = false;
+  
   private StreamProxy proxy;
   private NotificationManager notificationManager;
   private static final int NOTIFICATION_ID = 1;
@@ -207,7 +211,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
         return;
       }
     }
-
+    currentIsInvalid = false;
+    
     Log.d(LOG_TAG, "listening to " + url + " stream=" + stream);
     String playUrl = url;
     // From 2.2 on (SDK ver 8), the local mediaplayer can handle Shoutcast
@@ -244,7 +249,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
       int maxRetryCount = 10;   // 10 * 2 seconds before reset and prepare again
       int waitingCount = 0;
       int retryCount = 0;
-      while (!isPrepared) {
+      while (!isPrepared && !currentIsInvalid) {
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {}
@@ -259,7 +264,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
         }
       }
       
-      if (isPrepared) {
+      if (isPrepared || currentIsInvalid) {
         ready = true;
       }
     }
@@ -274,6 +279,9 @@ public class PlaybackService extends Service implements OnPreparedListener,
       }
     }
     play();
+    if (onPreparedListener != null) {
+      onPreparedListener.onPrepared(mp);
+    }
 //    if (parent != null) {
 //      parent.onPrepared(mp);
 //    }
@@ -316,7 +324,20 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public void onCompletion(MediaPlayer mp) {
     Log.w(LOG_TAG, "onComplete()");
+    
+    synchronized(this) {
+      if (!isPrepared) {
+        // This file was not good and MediaPlayer quit
+        Log.w(LOG_TAG, "MediaPlayer refused to play current item. Bailing on prepare.");
+        currentIsInvalid = true;
+      }
+    }
+
     notificationManager.cancel(NOTIFICATION_ID);
+    
+    if (onCompletionListener != null) {
+      onCompletionListener.onCompletion(mp);
+    }
 //    if (parent != null) {
 //      parent.onCompletion(mp);
 //    }
@@ -467,5 +488,34 @@ public class PlaybackService extends Service implements OnPreparedListener,
     values.put(Items.IS_READ, true);
     @SuppressWarnings("unused")
     int result = getContentResolver().update(update, values, null, null);
+  }
+
+  
+  // -----------
+  // Some stuff added for inspection when testing
+  
+  private OnCompletionListener onCompletionListener;
+  
+  /**
+   * Allows a class to be notified when the currently playing track is completed.
+   * Mostly used for testing the service
+   * 
+   * @param listener
+   */
+  public void setOnCompletionListener(OnCompletionListener  listener) {
+    onCompletionListener = listener;
+  }
+  
+  private OnPreparedListener onPreparedListener;
+  
+  /**
+   * Allows a class to be notified when the currently selected track has
+   * been prepared to start playing.
+   * Mostly used for testing.
+   * 
+   * @param listener
+   */
+  public void setOnPreparedListener(OnPreparedListener listener) {
+    onPreparedListener = listener;
   }
 }

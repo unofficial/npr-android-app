@@ -14,6 +14,7 @@
 
 package org.npr.android.news;
 
+
 import android.util.Log;
 
 import org.apache.http.Header;
@@ -70,7 +71,7 @@ public class StreamProxy implements Runnable {
 
   public void init() {
     try {
-      socket = new ServerSocket(port, 0, InetAddress.getLocalHost());
+      socket = new ServerSocket(port, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
       socket.setSoTimeout(5000);
       port = socket.getLocalPort();
       Log.d(getClass().getName(), "port " + port + " obtained");
@@ -82,12 +83,22 @@ public class StreamProxy implements Runnable {
   }
 
   public void start() {
+
+    if (socket == null) {
+      throw new IllegalStateException("Cannot start proxy; it has not been initialized.");
+    }
+    
     thread = new Thread(this);
     thread.start();
   }
 
   public void stop() {
     isRunning = false;
+    
+    if (thread == null) {
+      throw new IllegalStateException("Cannot stop proxy; it has not been started.");
+    }
+    
     thread.interrupt();
     try {
       thread.join(5000);

@@ -63,9 +63,6 @@
     android:name="android.permission.READ_PHONE_STATE" />
   <uses-permission 
     android:name="android.permission.ACCESS_NETWORK_STATE" />
-  <instrumentation
-    android:targetPackage="org.npr.android.news"
-    android:name="android.test.InstrumentationTestRunner"></instrumentation>
   <uses-sdk
     android:targetSdkVersion="3"
     android:minSdkVersion="3"></uses-sdk>

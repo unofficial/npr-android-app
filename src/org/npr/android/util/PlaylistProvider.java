@@ -60,10 +60,14 @@ public class PlaylistProvider extends ContentProvider {
    * 
    * @param context
    * @param helper
-   * @return The max play order
+   * @return The max play order, or -1 if there are no entries in the playlist
    */
   protected static int getMax(Context context, PlaylistHelper helper) {
     SQLiteDatabase db = helper.getReadableDatabase();
+    
+    if (DatabaseUtils.queryNumEntries(db, TABLE_NAME) == 0) {
+      return -1;
+    }
 
     return (int) DatabaseUtils.longForQuery(db, "select max(play_order) from "
         + TABLE_NAME, null);
