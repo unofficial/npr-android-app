@@ -36,10 +36,11 @@ public class PlsParser implements PlaylistParser {
     while (true) {
       try {
         String line = reader.readLine();
-        String url;
         if (line == null) {
           break;
-        } else if (!(url = parseLine(reader.readLine())).equals("")) {
+        } 
+        String url = parseLine(line);
+        if (url != null && !url.equals("")) {
           urls.add(url);
         }
       } catch (IOException e) {
