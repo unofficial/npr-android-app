@@ -230,6 +230,7 @@ public class Main extends PlayerActivity implements
               finish();
             }
           }).create().show();
+      ApiConstants.createInstance(key.toString());
     } else {
       ApiConstants.createInstance(key.toString());
     }

@@ -76,6 +76,10 @@
     <string name="msg_ok">Ok</string>
     <string name="msg_parse_error">There was an error retrieving the requested resource.</string>
 
-    <string name="msg_api_key_error">API key not found. You will not be able to use the application without one.</string>
+    <string name="msg_api_key_error">You need to provide your own API key to run the application.\n
+Go to: http://www.npr.org/api/queryGenerator.php\n
+Request a key.\n
+Paste your public key into the api_key.txt file (NOTE: do not paste a query in here, just the key)
+</string>
     <string name="msg_item_added_to_playlist">Item added to playlist</string>
 </resources>
