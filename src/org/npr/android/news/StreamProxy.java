@@ -59,6 +59,8 @@ import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 
 public class StreamProxy implements Runnable {
+  private static final String LOG_TAG = StreamProxy.class.getName();
+  
   private int port = 0;
 
   public int getPort() {
@@ -74,11 +76,11 @@ public class StreamProxy implements Runnable {
       socket = new ServerSocket(port, 0, InetAddress.getByAddress(new byte[] {127,0,0,1}));
       socket.setSoTimeout(5000);
       port = socket.getLocalPort();
-      Log.d(getClass().getName(), "port " + port + " obtained");
+      Log.d(LOG_TAG, "port " + port + " obtained");
     } catch (UnknownHostException e) {
-      Log.e(getClass().getName(), "Error initializing server", e);
+      Log.e(LOG_TAG, "Error initializing server", e);
     } catch (IOException e) {
-      Log.e(getClass().getName(), "Error initializing server", e);
+      Log.e(LOG_TAG, "Error initializing server", e);
     }
   }
 
@@ -109,23 +111,23 @@ public class StreamProxy implements Runnable {
 
   @Override
   public void run() {
-    Log.d(getClass().getName(), "running");
+    Log.d(LOG_TAG, "running");
     while (isRunning) {
       try {
         Socket client = socket.accept();
         if (client == null) {
           continue;
         }
-        Log.d(getClass().getName(), "client connected");
+        Log.d(LOG_TAG, "client connected");
         HttpRequest request = readRequest(client);
         processRequest(request, client);
       } catch (SocketTimeoutException e) {
         // Do nothing
       } catch (IOException e) {
-        Log.e(getClass().getName(), "Error connecting to client", e);
+        Log.e(LOG_TAG, "Error connecting to client", e);
       }
     }
-    Log.d(getClass().getName(), "Proxy interrupted. Shutting down.");
+    Log.d(LOG_TAG, "Proxy interrupted. Shutting down.");
   }
 
   private HttpRequest readRequest(Socket client) {
@@ -137,16 +139,21 @@ public class StreamProxy implements Runnable {
       BufferedReader reader = new BufferedReader(new InputStreamReader(is));
       firstLine = reader.readLine();
     } catch (IOException e) {
-      Log.e(getClass().getName(), "Error parsing request", e);
+      Log.e(LOG_TAG, "Error parsing request", e);
+      return request;
+    }
+    
+    if (firstLine == null) {
+      Log.i(LOG_TAG, "Proxy client closed connection without a request.");
       return request;
     }
 
     StringTokenizer st = new StringTokenizer(firstLine);
     String method = st.nextToken();
     String uri = st.nextToken();
-    Log.d(getClass().getName(), uri);
+    Log.d(LOG_TAG, uri);
     String realUri = uri.substring(1);
-    Log.d(getClass().getName(), realUri);
+    Log.d(LOG_TAG, realUri);
     request = new BasicHttpRequest(method, realUri);
     return request;
   }
@@ -162,13 +169,13 @@ public class StreamProxy implements Runnable {
     HttpGet method = new HttpGet(url);
     HttpResponse response = null;
     try {
-      Log.d(getClass().getName(), "starting download");
+      Log.d(LOG_TAG, "starting download");
       response = http.execute(method);
-      Log.d(getClass().getName(), "downloaded");
+      Log.d(LOG_TAG, "downloaded");
     } catch (ClientProtocolException e) {
-      Log.e(getClass().getName(), "Error downloading", e);
+      Log.e(LOG_TAG, "Error downloading", e);
     } catch (IOException e) {
-      Log.e(getClass().getName(), "Error downloading", e);
+      Log.e(LOG_TAG, "Error downloading", e);
     }
     return response;
   }
@@ -178,21 +185,21 @@ public class StreamProxy implements Runnable {
     if (request == null) {
       return;
     }
-    Log.d(getClass().getName(), "processing");
+    Log.d(LOG_TAG, "processing");
     String url = request.getRequestLine().getUri();
     HttpResponse realResponse = download(url);
     if (realResponse == null) {
       return;
     }
 
-    Log.d(getClass().getName(), "downloading...");
+    Log.d(LOG_TAG, "downloading...");
 
     InputStream data = realResponse.getEntity().getContent();
     StatusLine line = realResponse.getStatusLine();
     HttpResponse response = new BasicHttpResponse(line);
     response.setHeaders(realResponse.getAllHeaders());
 
-    Log.d(getClass().getName(), "reading headers");
+    Log.d(LOG_TAG, "reading headers");
     StringBuilder httpString = new StringBuilder();
     httpString.append(response.getStatusLine().toString());
     
@@ -202,12 +209,12 @@ public class StreamProxy implements Runnable {
           "\n");
     }
     httpString.append("\n");
-    Log.d(getClass().getName(), "headers done");
+    Log.d(LOG_TAG, "headers done");
 
     try {
       byte[] buffer = httpString.toString().getBytes();
       int readBytes = -1;
-      Log.d(getClass().getName(), "writing to client");
+      Log.d(LOG_TAG, "writing to client");
       client.getOutputStream().write(buffer, 0, buffer.length);
 
       // Start streaming content.
@@ -296,7 +303,6 @@ public class StreamProxy implements Runnable {
       }
 
       // check the protocol name and slash
-      boolean ok = true;
       if (!buffer.substring(i, i + protolength).equals(ICY_PROTOCOL_NAME)) {
         return super.parseProtocolVersion(buffer, cursor);
       }
