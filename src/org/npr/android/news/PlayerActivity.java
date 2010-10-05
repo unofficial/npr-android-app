@@ -99,15 +99,15 @@ public abstract class PlayerActivity extends ActivityGroup implements
               int.class, int.class});
       overridePendingTransition.invoke(this, 0, 0);
     } catch (SecurityException e) {
-      Log.e(LOG_TAG, "", e);
+      Log.w(LOG_TAG, "", e);
     } catch (NoSuchMethodException e) {
-      Log.e(LOG_TAG, "", e);
+      // Don't log an error here; we anticipate an error on SDK < 5
     } catch (IllegalArgumentException e) {
-      Log.e(LOG_TAG, "", e);
+      Log.w(LOG_TAG, "", e);
     } catch (IllegalAccessException e) {
-      Log.e(LOG_TAG, "", e);
+      Log.w(LOG_TAG, "", e);
     } catch (InvocationTargetException e) {
-      Log.e(LOG_TAG, "", e);
+      Log.w(LOG_TAG, "", e);
     }
   }
 
