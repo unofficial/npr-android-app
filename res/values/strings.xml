@@ -76,10 +76,10 @@
     <string name="msg_ok">Ok</string>
     <string name="msg_parse_error">There was an error retrieving the requested resource.</string>
 
-    <string name="msg_api_key_error">You need to provide your own API key to run the application.\n
-Go to: http://www.npr.org/api/queryGenerator.php\n
-Request a key.\n
-Paste your public key into the api_key.txt file (NOTE: do not paste a query in here, just the key)
+    <string name="msg_api_key_error">
+To run the NPR app register for an account at <a href="http://npr.org/api">npr.org/api</a>.
+Then login, go to \"Manage\" and click \"Generate Key.\"
+Paste the key into res/raw/api_key.txt
 </string>
     <string name="msg_item_added_to_playlist">Item added to playlist</string>
 </resources>

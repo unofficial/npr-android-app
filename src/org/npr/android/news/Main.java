@@ -25,12 +25,14 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
@@ -237,13 +239,23 @@ public class Main extends PlayerActivity implements OnItemClickListener {
       Log.e(LOG_TAG, "", e);
     }
     if (key.equals("")) {
-      new AlertDialog.Builder(this).setMessage(R.string.msg_api_key_error)
+      
+      final AlertDialog dialog = new AlertDialog.Builder(this)
           .setOnCancelListener(new OnCancelListener() {
             @Override
             public void onCancel(DialogInterface dialog) {
               finish();
             }
-          }).create().show();
+          })
+          .setMessage(R.string.msg_api_key_error)
+          .create();
+      dialog.show();
+
+      // Make the textview clickable. Must be called after show()
+      // http://stackoverflow.com/questions/1997328/android-clickable-hyperlinks-in-alertdialog
+      ((TextView) dialog.findViewById(android.R.id.message))
+          .setMovementMethod(LinkMovementMethod.getInstance());      
+
       ApiConstants.createInstance(key.toString());
     } else {
       ApiConstants.createInstance(key.toString());
