@@ -110,10 +110,9 @@ public class ListenView extends FrameLayout implements OnClickListener,
       }
 
     };
-    if (!PlaybackService.isRunning) {
-      getContext().getApplicationContext().startService(serviceIntent);
-    }
-    getContext().getApplicationContext().bindService(serviceIntent, conn, 1);
+
+    getContext().getApplicationContext().bindService(serviceIntent, conn,
+        Context.BIND_AUTO_CREATE);
   }
 
   public void detach() {
