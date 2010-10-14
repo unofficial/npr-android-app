@@ -33,6 +33,8 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.npr.android.util.M3uParser;
@@ -64,10 +66,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
   public static final String EXTRA_STREAM = "extra_stream";
   public static final String EXTRA_STORY_ID = "extra_story_id";
 
-  private static MediaPlayer mediaPlayer;
-  public static boolean isRunning = false;
-  private static boolean isPrepared = false;
-  // Why are the above two static?
+  private MediaPlayer mediaPlayer;
+  private boolean isPrepared = false;
   // This is set if the currently playing item fails to play, so that
   private boolean currentIsInvalid = false;
 
@@ -75,12 +75,26 @@ public class PlaybackService extends Service implements OnPreparedListener,
   private NotificationManager notificationManager;
   private static final int NOTIFICATION_ID = 1;
   private int bindCount = 0;
-  private static PlaylistEntry current = null;
+  private PlaylistEntry current = null;
   private List<String> playlistUrls;
+
+  private TelephonyManager telephonyManager;
+  private PhoneStateListener listener;
+  private boolean isPausedInCall = false;
+
+  // Amount of time to rewind playback when resuming after call 
+  private final static int RESUME_REWIND_TIME = 3000;
+
+  PlaybackService(MediaPlayer mediaPlayer) {
+    super();
+    this.mediaPlayer = mediaPlayer;
+  }
 
   @Override
   public void onCreate() {
-    mediaPlayer = new MediaPlayer();
+    if (mediaPlayer == null) {
+      mediaPlayer = new MediaPlayer();
+    }
     mediaPlayer.setOnBufferingUpdateListener(this);
     mediaPlayer.setOnCompletionListener(this);
     mediaPlayer.setOnErrorListener(this);
@@ -89,7 +103,34 @@ public class PlaybackService extends Service implements OnPreparedListener,
     notificationManager = (NotificationManager) getSystemService(
         Context.NOTIFICATION_SERVICE);
     Log.w(LOG_TAG, "Playback service created");
-    isRunning = true;
+
+    telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+    // Create a PhoneStateListener to watch for offhook and idle events
+    listener = new PhoneStateListener() {
+      @Override
+      public void onCallStateChanged(int state, String incomingNumber) {
+        switch (state) {
+        case TelephonyManager.CALL_STATE_OFFHOOK:
+        case TelephonyManager.CALL_STATE_RINGING:
+          // Phone going offhook or ringing, pause the player.
+          if (isPlaying()) {
+            pause();
+            isPausedInCall = true;
+          }
+          break;
+        case TelephonyManager.CALL_STATE_IDLE:
+          // Phone idle. Rewind a couple of seconds and start playing.
+          if (isPausedInCall) {
+            seekTo(Math.max(0, getPosition() - RESUME_REWIND_TIME));
+            play();
+          }
+          break;
+        }
+      }
+    };
+
+    // Register the listener with the telephony manager.
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_CALL_STATE);
   }
 
   @Override
@@ -107,7 +148,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
     return false;
   }
 
-  synchronized public Boolean isPlaying() {
+  synchronized public boolean isPlaying() {
     if (isPrepared) {
       return mediaPlayer.isPlaying();
     }
@@ -119,7 +160,7 @@ public class PlaybackService extends Service implements OnPreparedListener,
     return c;
   }
 
-  public static void setCurrent(PlaylistEntry c) {
+  public void setCurrent(PlaylistEntry c) {
     current = c;
   }
 
@@ -309,7 +350,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
         mediaPlayer = null;
       }
     }
-    isRunning = false;
+
+    telephonyManager.listen(listener, PhoneStateListener.LISTEN_NONE);
   }
 
   public class ListenBinder extends Binder {
