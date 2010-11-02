@@ -23,6 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnBufferingUpdateListener;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -57,19 +58,20 @@ public class PlaybackService extends Service implements OnPreparedListener,
     OnBufferingUpdateListener, OnCompletionListener, OnErrorListener,
     OnInfoListener {
 
-  private static final String LOG_TAG = PlaybackService.class.toString();
-  public static final String EXTRA_CONTENT_URL = "extra_content_url";
-  public static final String EXTRA_CONTENT_TITLE = "extra_content_title";
-  public static final String EXTRA_CONTENT_ID = "extra_content_id";
-  public static final String EXTRA_ENQUEUE = "extra_enqueue";
-  public static final String EXTRA_PLAY_IMMEDIATELY = "extra_play_immediately";
-  public static final String EXTRA_STREAM = "extra_stream";
-  public static final String EXTRA_STORY_ID = "extra_story_id";
+  private static final String LOG_TAG = PlaybackService.class.getName();
+
+  private static final String SERVICE_PREFIX = "org.npr.android.news.";
+  public static final String SERVICE_CHANGE_NAME = SERVICE_PREFIX + "CHANGE";
+  public static final String SERVICE_CLOSE_NAME = SERVICE_PREFIX + "CLOSE";
+  public static final String SERVICE_UPDATE_NAME = SERVICE_PREFIX + "UPDATE";
+  
+  public static final String EXTRA_TITLE = "title";
+  public static final String EXTRA_DOWNLOADED = "downloaded";
+  public static final String EXTRA_DURATION = "duration";
+  public static final String EXTRA_POSITION = "position";
 
   private MediaPlayer mediaPlayer;
   private boolean isPrepared = false;
-  // This is set if the currently playing item fails to play, so that
-  private boolean currentIsInvalid = false;
 
   private StreamProxy proxy;
   private NotificationManager notificationManager;
@@ -81,20 +83,17 @@ public class PlaybackService extends Service implements OnPreparedListener,
   private TelephonyManager telephonyManager;
   private PhoneStateListener listener;
   private boolean isPausedInCall = false;
+  private Intent lastChangeBroadcast;
+  private Intent lastUpdateBroadcast;
+  private int lastBufferPercent = 0;
+  private Thread updateProgressThread;
 
   // Amount of time to rewind playback when resuming after call 
   private final static int RESUME_REWIND_TIME = 3000;
 
-  PlaybackService(MediaPlayer mediaPlayer) {
-    super();
-    this.mediaPlayer = mediaPlayer;
-  }
-
   @Override
   public void onCreate() {
-    if (mediaPlayer == null) {
-      mediaPlayer = new MediaPlayer();
-    }
+    mediaPlayer = new MediaPlayer();
     mediaPlayer.setOnBufferingUpdateListener(this);
     mediaPlayer.setOnCompletionListener(this);
     mediaPlayer.setOnErrorListener(this);
@@ -136,15 +135,20 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public IBinder onBind(Intent arg0) {
     bindCount++;
+    Log.d(LOG_TAG, "Bound PlaybackService, count " + bindCount);
     return new ListenBinder();
   }
 
   @Override
   public boolean onUnbind(Intent arg0) {
     bindCount--;
-    Log.w(LOG_TAG, "Unbinding PlaybackService");
-    if (!isPlaying() && bindCount == 0)
+    Log.d(LOG_TAG, "Unbinding PlaybackService, count " + bindCount);
+    if (!isPlaying() && bindCount == 0) {
+      Log.w(LOG_TAG, "Will stop self");
       stopSelf();
+    } else {
+      Log.d(LOG_TAG, "Will not stop self");
+    }
     return false;
   }
 
@@ -192,8 +196,8 @@ public class PlaybackService extends Service implements OnPreparedListener,
   }
 
   synchronized public void play() {
-    if (!isPrepared) {
-      Log.e(LOG_TAG, "play - not prepared" + current.id);
+    if (!isPrepared || current == null) {
+      Log.e(LOG_TAG, "play - not prepared");
       return;
     }
     Log.d(LOG_TAG, "play " + current.id);
@@ -224,6 +228,15 @@ public class PlaybackService extends Service implements OnPreparedListener,
         notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
     notification.setLatestEventInfo(c, title, contentText, contentIntent);
     notificationManager.notify(NOTIFICATION_ID, notification);
+
+    // Change broadcasts are sticky, so when a new receiver connects, it will
+    // have the data without polling.
+    if (lastChangeBroadcast != null) {
+      getApplicationContext().removeStickyBroadcast(lastChangeBroadcast);
+    }
+    lastChangeBroadcast = new Intent(SERVICE_CHANGE_NAME);
+    lastChangeBroadcast.putExtra(EXTRA_TITLE, current.title);
+    getApplicationContext().sendStickyBroadcast(lastChangeBroadcast);
   }
 
   synchronized public void pause() {
@@ -239,14 +252,25 @@ public class PlaybackService extends Service implements OnPreparedListener,
     if (isPrepared) {
       if (proxy != null) {
         proxy.stop();
+        proxy = null;
       }
       mediaPlayer.stop();
+      isPrepared = false;
     }
-    notificationManager.cancel(NOTIFICATION_ID);
+    cleanup();
   }
 
+  
+  /**
+   * Start listening to the given URL.
+   */
   public void listen(String url, boolean stream)
       throws IllegalArgumentException, IllegalStateException, IOException {
+    // First, clean up any existing audio.
+    if (isPlaying()) {
+      stop();
+    }
+
     if (isPlaylist(url)) {
       downloadPlaylist();
       if (playlistUrls.size() > 0) {
@@ -255,13 +279,12 @@ public class PlaybackService extends Service implements OnPreparedListener,
         return;
       }
     }
-    currentIsInvalid = false;
 
     Log.d(LOG_TAG, "listening to " + url + " stream=" + stream);
     String playUrl = url;
     // From 2.2 on (SDK ver 8), the local mediaplayer can handle Shoutcast
     // streams natively. Let's detect that, and not proxy.
-    Log.w(LOG_TAG, Build.VERSION.SDK);
+    Log.d(LOG_TAG, "SDK Version " + Build.VERSION.SDK);
     int sdkVersion = 0;
     try {
       sdkVersion = Integer.parseInt(Build.VERSION.SDK);
@@ -279,40 +302,14 @@ public class PlaybackService extends Service implements OnPreparedListener,
       playUrl = proxyUrl;
     }
 
-    boolean ready = false;
-    while (!ready) {
-      synchronized (this) {
-        Log.d(LOG_TAG, "reset: " + playUrl);
-        mediaPlayer.reset();
-        mediaPlayer.setDataSource(playUrl);
-        Log.d(LOG_TAG, "Preparing: " + playUrl);
-        mediaPlayer.prepareAsync();
-        Log.d(LOG_TAG, "Waiting for prepare");
-      }
-
-      int maxWaitingCount = 20; // 2 seconds
-      int maxRetryCount = 10; // 10 * 2 seconds before reset and prepare again
-      int waitingCount = 0;
-      int retryCount = 0;
-      while (!isPrepared && !currentIsInvalid) {
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-        }
-
-        if (waitingCount++ > maxWaitingCount) {
-          waitingCount = 0;
-          Log.d(LOG_TAG, "Still waiting for prepare");
-
-          if (retryCount++ > maxRetryCount) {
-            break;
-          }
-        }
-      }
-
-      if (isPrepared || currentIsInvalid) {
-        ready = true;
-      }
+    synchronized (this) {
+      Log.d(LOG_TAG, "reset: " + playUrl);
+      mediaPlayer.reset();
+      mediaPlayer.setDataSource(playUrl);
+      mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+      Log.d(LOG_TAG, "Preparing: " + playUrl);
+      mediaPlayer.prepareAsync();
+      Log.d(LOG_TAG, "Waiting for prepare");
     }
   }
 
@@ -328,24 +325,46 @@ public class PlaybackService extends Service implements OnPreparedListener,
     if (onPreparedListener != null) {
       onPreparedListener.onPrepared(mp);
     }
-    // if (parent != null) {
-    // parent.onPrepared(mp);
-    // }
+
+    updateProgressThread = new Thread(new Runnable() {
+      public void run() {
+        // Initially, don't send any updates, since it takes a while for the
+        // media player to settle down. 
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          return;
+        }
+        while (true) {
+          updateProgress();
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            break;
+          }
+        }
+      }
+    });
+    updateProgressThread.start();
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
-    if (proxy != null) {
-      proxy.stop();
+    Log.w(LOG_TAG, "Service exiting");
+
+    if (updateProgressThread != null) {
+      updateProgressThread.interrupt();
+      try {
+        updateProgressThread.join(3000);
+      } catch (InterruptedException e) {
+        Log.e(LOG_TAG, "", e);
+      }
     }
 
+    stop();
     synchronized (this) {
       if (mediaPlayer != null) {
-        if (isPrepared && mediaPlayer.isPlaying()) {
-          mediaPlayer.stop();
-        }
-        isPrepared = false;
         mediaPlayer.release();
         mediaPlayer = null;
       }
@@ -362,12 +381,35 @@ public class PlaybackService extends Service implements OnPreparedListener,
   }
 
   @Override
-  public void onBufferingUpdate(MediaPlayer arg0, int arg1) {
-    // if (parent != null) {
-    // parent.onBufferingUpdate(arg0, arg1);
-    // }
+  public void onBufferingUpdate(MediaPlayer mp, int progress) {
+    if (isPrepared) {
+      lastBufferPercent = progress;
+      updateProgress();
+    }
   }
 
+  /**
+   * Sends an UPDATE broadcast with the latest info.
+   */
+  private void updateProgress() {
+    if (isPrepared && mediaPlayer != null && mediaPlayer.isPlaying()) {
+      // Update broadcasts are sticky, so when a new receiver connects, it will
+      // have the data without polling.
+      if (lastUpdateBroadcast != null) {
+        getApplicationContext().removeStickyBroadcast(lastUpdateBroadcast);
+      }
+      lastUpdateBroadcast = new Intent(SERVICE_UPDATE_NAME);
+      int position = mediaPlayer.getCurrentPosition();
+      int duration = mediaPlayer.getDuration();
+      lastUpdateBroadcast.putExtra(EXTRA_DURATION, mediaPlayer.getDuration());
+      lastUpdateBroadcast.putExtra(EXTRA_DOWNLOADED,
+          (int) ((lastBufferPercent / 100.0) * mediaPlayer.getDuration()));
+      lastUpdateBroadcast.putExtra(EXTRA_POSITION,
+          mediaPlayer.getCurrentPosition());
+      getApplicationContext().sendStickyBroadcast(lastUpdateBroadcast);
+    }
+  }
+  
   @Override
   public void onCompletion(MediaPlayer mp) {
     Log.w(LOG_TAG, "onComplete()");
@@ -377,18 +419,14 @@ public class PlaybackService extends Service implements OnPreparedListener,
         // This file was not good and MediaPlayer quit
         Log.w(LOG_TAG,
             "MediaPlayer refused to play current item. Bailing on prepare.");
-        currentIsInvalid = true;
       }
     }
 
-    notificationManager.cancel(NOTIFICATION_ID);
-
+    cleanup();
+    
     if (onCompletionListener != null) {
       onCompletionListener.onCompletion(mp);
     }
-    // if (parent != null) {
-    // parent.onCompletion(mp);
-    // }
 
     if (playlistUrls != null && playlistUrls.size() > 0) {
       // Unfinished playlist
@@ -414,18 +452,19 @@ public class PlaybackService extends Service implements OnPreparedListener,
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
     Log.w(LOG_TAG, "onError(" + what + ", " + extra + ")");
-    // if (parent != null) {
-    // return parent.onError(mp, what, extra);
-    // }
+    synchronized (this) {
+      if (!isPrepared) {
+        // This file was not good and MediaPlayer quit
+        Log.w(LOG_TAG,
+            "MediaPlayer refused to play current item. Bailing on prepare.");
+      }
+    }
     return false;
   }
 
   @Override
   public boolean onInfo(MediaPlayer arg0, int arg1, int arg2) {
     Log.w(LOG_TAG, "onInfo(" + arg1 + ", " + arg2 + ")");
-    // if (parent != null) {
-    // return parent.onInfo(arg0, arg1, arg2);
-    // }
     return false;
   }
 
@@ -454,6 +493,20 @@ public class PlaybackService extends Service implements OnPreparedListener,
         Log.d(LOG_TAG, "playing commenced");
       }
     }
+  }
+
+  /**
+   * Remove all intents and notifications about the last media.
+   */
+  private void cleanup() {
+    notificationManager.cancel(NOTIFICATION_ID);
+    if (lastChangeBroadcast != null) {
+      getApplicationContext().removeStickyBroadcast(lastChangeBroadcast);
+    }
+    if (lastUpdateBroadcast != null) {
+      getApplicationContext().removeStickyBroadcast(lastUpdateBroadcast);
+    }
+    getApplicationContext().sendBroadcast(new Intent(SERVICE_CLOSE_NAME));
   }
 
   private boolean isPlaylist(String url) {

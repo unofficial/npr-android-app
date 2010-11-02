@@ -36,16 +36,14 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.SlidingDrawer.OnDrawerCloseListener;
 import android.widget.SlidingDrawer.OnDrawerOpenListener;
 
+import org.npr.android.util.PlaylistEntry;
+
+import java.io.IOException;
+
 public class ListenView extends FrameLayout implements OnClickListener,
     OnSeekBarChangeListener, OnDrawerOpenListener, OnDrawerCloseListener {
 
-  private static final String LOG_TAG = ListenView.class.toString();
-  public static final String EXTRA_CONTENT_URL = "extra_content_url";
-  public static final String EXTRA_CONTENT_TITLE = "extra_content_title";
-  public static final String EXTRA_CONTENT_ID = "extra_content_id";
-  public static final String EXTRA_ENQUEUE = "extra_enqueue";
-  public static final String EXTRA_PLAY_IMMEDIATELY = "extra_play_immediately";
-  public static final String EXTRA_STREAM = "extra_stream";
+  private static final String LOG_TAG = ListenView.class.getName();
 
   private ImageButton streamButton;
   private ImageButton playButton;
@@ -53,8 +51,11 @@ public class ListenView extends FrameLayout implements OnClickListener,
   private TextView infoText;
   private TextView lengthText;
   private SlidingDrawer drawer;
+  private boolean playButtonisPause = false;
 
-  private BroadcastReceiver receiver = new ListenBroadcastReceiver();
+  private BroadcastReceiver changeReceiver = new PlaybackChangeReceiver();
+  private BroadcastReceiver updateReceiver = new PlaybackUpdateReceiver();
+  private BroadcastReceiver closeReceiver = new PlaybackCloseReceiver();
 
   private ServiceConnection conn;
   private PlaybackService player;
@@ -80,7 +81,6 @@ public class ListenView extends FrameLayout implements OnClickListener,
     playlistButton.setOnClickListener(this);
 
     progressBar = (SeekBar) findViewById(R.id.StreamProgressBar);
-    progressBar.setMax(100);
     progressBar.setOnSeekBarChangeListener(this);
     progressBar.setEnabled(false);
 
@@ -88,19 +88,16 @@ public class ListenView extends FrameLayout implements OnClickListener,
 
     lengthText = (TextView) findViewById(R.id.StreamLengthText);
     lengthText.setText("");
+
+    attachToPlaybackService();
   }
 
-  public void reattach() {
-    getContext().registerReceiver(receiver,
-        new IntentFilter(this.getClass().getName()));
-
+  public void attachToPlaybackService() {
     Intent serviceIntent = new Intent(getContext(), PlaybackService.class);
     conn = new ServiceConnection() {
-
       @Override
       public void onServiceConnected(ComponentName name, IBinder service) {
         player = ((PlaybackService.ListenBinder) service).getService();
-        onBindComplete((PlaybackService.ListenBinder) service);
       }
 
       @Override
@@ -108,32 +105,46 @@ public class ListenView extends FrameLayout implements OnClickListener,
         Log.w(LOG_TAG, "DISCONNECT");
         player = null;
       }
-
     };
 
-    getContext().getApplicationContext().bindService(serviceIntent, conn,
-        Context.BIND_AUTO_CREATE);
+    // Explicitly start the service. Don't use BIND_AUTO_CREATE, since it
+    // causes an implicit service stop when the last binder is removed.
+    getContext().getApplicationContext().startService(serviceIntent);
+    getContext().getApplicationContext().bindService(serviceIntent, conn, 0);
+
+    getContext().registerReceiver(changeReceiver,
+        new IntentFilter(PlaybackService.SERVICE_CHANGE_NAME));
+    getContext().registerReceiver(updateReceiver,
+        new IntentFilter(PlaybackService.SERVICE_UPDATE_NAME));
+    getContext().registerReceiver(closeReceiver,
+        new IntentFilter(PlaybackService.SERVICE_CLOSE_NAME));
   }
 
-  public void detach() {
-    getContext().unregisterReceiver(receiver);
-    getContext().getApplicationContext().unbindService(conn);
-  }
-  
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     init();
   }
 
-  private void onBindComplete(PlaybackService.ListenBinder binder) {
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    Log.d(LOG_TAG, "detached from window");
+    getContext().unregisterReceiver(changeReceiver);
+    getContext().unregisterReceiver(updateReceiver);
+    getContext().unregisterReceiver(closeReceiver);
+    getContext().getApplicationContext().unbindService(conn);
   }
 
   private void togglePlay() {
     if (player.isPlaying()) {
       player.pause();
+      playButton.setImageResource(android.R.drawable.ic_media_play);
+      playButtonisPause = false;
     } else {
       player.play();
+      playButton.setImageResource(android.R.drawable.ic_media_pause);
+      playButtonisPause = true;
     }
   }
 
@@ -159,10 +170,56 @@ public class ListenView extends FrameLayout implements OnClickListener,
     }
   }
 
-  class ListenBroadcastReceiver extends BroadcastReceiver {
+  protected void listen(PlaylistEntry entry) {
+    if (player != null) {
+      try {
+        player.setCurrent(entry);
+        player.listen(entry.url, entry.isStream);
+      } catch (IllegalArgumentException e) {
+        Log.e(LOG_TAG, "", e);
+      } catch (IllegalStateException e) {
+        Log.e(LOG_TAG, "", e);
+      } catch (IOException e) {
+        Log.e(LOG_TAG, "", e);
+      }
+    }
+  }
+
+  private class PlaybackChangeReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-      Log.w(LOG_TAG, "broadcast received");
+      String title = intent.getStringExtra(PlaybackService.EXTRA_TITLE);
+      infoText.setText(title);
+    }
+  }
+
+  private class PlaybackUpdateReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      int duration = intent.getIntExtra(PlaybackService.EXTRA_DURATION, 1);
+      int position = intent.getIntExtra(PlaybackService.EXTRA_POSITION, 0);
+      int downloaded = intent.getIntExtra(PlaybackService.EXTRA_DOWNLOADED, 1);
+      if (!playButtonisPause && player != null && player.isPlaying()) {
+        playButton.setImageResource(android.R.drawable.ic_media_pause);
+        playButtonisPause = true;
+      }
+      playButton.setEnabled(true);
+      progressBar.setEnabled(true);
+      progressBar.setMax(duration);
+      progressBar.setProgress(position);
+      progressBar.setSecondaryProgress(downloaded);
+    }
+  }
+  
+  private class PlaybackCloseReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      playButton.setEnabled(false);
+      playButton.setImageResource(android.R.drawable.ic_media_play);
+      progressBar.setEnabled(false);
+      progressBar.setProgress(0);
+      progressBar.setSecondaryProgress(0);
+      infoText.setText(null);
     }
   }
 

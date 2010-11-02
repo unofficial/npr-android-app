@@ -214,14 +214,7 @@ public class Main extends PlayerActivity implements OnItemClickListener {
 
   private void playHourly() {
     // Request to stream audio
-    Intent i = new Intent(ListenView.class.getName())
-        .putExtra(ListenView.EXTRA_CONTENT_URL, hourlyGuid)
-        .putExtra(ListenView.EXTRA_CONTENT_TITLE, hourlyTitle)
-        .putExtra(ListenView.EXTRA_ENQUEUE, false)
-        .putExtra(ListenView.EXTRA_CONTENT_URL, hourlyURL)
-        .putExtra(ListenView.EXTRA_PLAY_IMMEDIATELY, true);
-
-    sendBroadcast(i);
+    // TODO: Play audio
   }
 
   private void errorMessage() {
@@ -316,8 +309,8 @@ public class Main extends PlayerActivity implements OnItemClickListener {
     synchronized (locationListeners) {
       for (LocationListener listener : locationListeners) {
         lm.removeUpdates(listener);
-        locationListeners.remove(listener);
       }
+      locationListeners.clear();
     }
   }
 

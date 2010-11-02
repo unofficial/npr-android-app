@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
   xmlns:android="http://schemas.android.com/apk/res/android"
-  package="org.npr.android.news" android:versionName="1.2.1" android:versionCode="3">
+  package="org.npr.android.news" android:versionName="1.2.113" android:versionCode="3">
   <application
     android:theme="@style/MyTheme"
     android:icon="@drawable/icon">
@@ -63,6 +63,8 @@
     android:name="android.permission.READ_PHONE_STATE" />
   <uses-permission 
     android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission
+    android:name="android.permission.BROADCAST_STICKY"></uses-permission>
   <uses-sdk
     android:targetSdkVersion="3"
     android:minSdkVersion="3"></uses-sdk>

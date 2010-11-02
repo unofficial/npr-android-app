@@ -116,14 +116,8 @@ public class PlaylistActivity extends Activity implements OnClickListener,
       c.moveToPosition(position);
       long playlistId = c.getLong(c.getColumnIndex(Items._ID));
       Log.d(LOG_TAG, "clicked on position " + position + ", id " + playlistId);
-      Intent i = new Intent(ListenView.class.getName()).putExtra(
-          ListenView.EXTRA_CONTENT_ID, playlistId).putExtra(
-          ListenView.EXTRA_PLAY_IMMEDIATELY, true).putExtra(
-          Constants.EXTRA_STORY_ID, c.getString(
-              c.getColumnIndex(PlaylistProvider.Items.STORY_ID))).putExtra(
-                  "description", "");
-      sendBroadcast(i);
     }
+    // TODO: play audio
     finish();
   }
 

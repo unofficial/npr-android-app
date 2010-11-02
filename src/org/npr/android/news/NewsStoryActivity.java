@@ -29,6 +29,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.npr.android.util.PlaylistEntry;
 import org.npr.android.util.Tracker;
 import org.npr.android.util.TypefaceCache;
 import org.npr.android.util.Tracker.LinkEvent;
@@ -203,19 +204,17 @@ public class NewsStoryActivity extends PlayerActivity implements
 
   private void playStory(boolean playNow) {
     Audio a = getPlayable();
-    Intent i =
-      new Intent(ListenView.class.getName()).putExtra(
-            ListenView.EXTRA_CONTENT_URL, getPlayableUrl(a)).putExtra(
-            ListenView.EXTRA_CONTENT_TITLE, story.getTitle()).putExtra(
-            ListenView.EXTRA_ENQUEUE, true).putExtra(Constants.EXTRA_STORY_ID, storyId);
+    String url = getPlayableUrl(a);
+    PlaylistEntry entry =
+        new PlaylistEntry(-1, url, story.getTitle(), false, -1, storyId);
     LinkEvent e;
     if (playNow) {
-      i.putExtra(ListenView.EXTRA_PLAY_IMMEDIATELY, true);
+      this.listen(entry);
       e = new PlayNowEvent(storyId, story.getTitle(), a.getId());
     } else {
       e = new PlayLaterEvent(storyId, story.getTitle(), a.getId());
     }
-    sendBroadcast(i);
+    
     Tracker.instance(getApplication()).trackLink(e);
   }
   
@@ -233,7 +232,7 @@ public class NewsStoryActivity extends PlayerActivity implements
     if (a != null) {
       for (Audio.Format f : a.getFormats()) {
         if ((url = f.getMp3()) != null) {
-          return url;
+          break;
         }
       }
     }

@@ -26,6 +26,8 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
 
+import org.npr.android.util.PlaylistEntry;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -34,10 +36,6 @@ import java.lang.reflect.Method;
  *
  * A base class for all Activities that want to display the default layout,
  * including the ListenView. 
- */
-/**
- * @author mfrederick@google.com (Your Name Here)
- *
  */
 public abstract class PlayerActivity extends ActivityGroup implements
     Trackable, Refreshable {
@@ -125,7 +123,7 @@ public abstract class PlayerActivity extends ActivityGroup implements
       menu.add(Menu.NONE, MenuId.REFRESH.ordinal(), Menu.NONE,
         R.string.msg_refresh).setAlphabeticShortcut('r');
     }
-    return (super.onCreateOptionsMenu(menu));
+    return super.onCreateOptionsMenu(menu);
   }
 
   @Override
@@ -139,15 +137,7 @@ public abstract class PlayerActivity extends ActivityGroup implements
     return super.onOptionsItemSelected(item);
   }
 
-  @Override
-  protected void onPause() {
-    super.onPause();
-    listenView.detach();
-  }
-
-  @Override
-  protected void onResume() {
-    super.onResume();
-    listenView.reattach();
+  protected void listen(PlaylistEntry entry) {
+    listenView.listen(entry);
   }
 }

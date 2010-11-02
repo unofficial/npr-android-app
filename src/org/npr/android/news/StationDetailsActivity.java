@@ -200,12 +200,7 @@ public class StationDetailsActivity extends PlayerActivity implements
     switch(groupPosition) {
       case 0:
         l = station.getAudioStreams().get(num);
-        i = new Intent(ListenView.class.getName()).putExtra(
-                ListenView.EXTRA_CONTENT_URL, l.getUrl()).putExtra(
-                ListenView.EXTRA_CONTENT_TITLE, l.getTitle()).putExtra(
-                ListenView.EXTRA_PLAY_IMMEDIATELY, true).putExtra(
-                ListenView.EXTRA_STREAM, true);
-        sendBroadcast(i);
+        // TODO: play audio
         break;
       case 1:
         l = station.getPodcasts().get(num);
